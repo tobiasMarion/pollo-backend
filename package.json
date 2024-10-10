@@ -1,0 +1,20 @@
+{
+  "name": "pollo-backend",
+  "version": "1.0.0",
+  "description": "An app to synchronize a million of fireflies",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/tobiasMarion/pollo-backend"
+  },
+  "keywords": [
+    "fastify",
+    "node",
+    "typescript"
+  ],
+  "author": "Tobias Cadoná Marion",
+  "license": "ISC"
+}
