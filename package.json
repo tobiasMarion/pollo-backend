@@ -2,9 +2,11 @@
   "name": "pollo-backend",
   "version": "1.0.0",
   "description": "An app to synchronize a million of fireflies",
-  "main": "src/index.ts",
+  "main": "src/server.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "lint:fix": "eslint --fix"
   },
   "repository": {
     "type": "git",
@@ -16,5 +18,23 @@
     "typescript"
   ],
   "author": "Tobias Cadoná Marion",
-  "license": "ISC"
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.0.2",
+    "@eslint/js": "^9.1.1",
+    "@rocketseat/eslint-config": "^2.2.2",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/node": "^20.12.7",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "eslint-config-standard-with-typescript": "^43.0.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "globals": "^15.0.0",
+    "tsx": "^4.7.3",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0"
+  }
 }
