@@ -21,7 +21,7 @@ app.register(fastifySwagger, {
   openapi: {
     info: {
       title: 'Pollo API',
-      description: 'An app to synchronize a million of fireflies',
+      description: 'An app to sync a million fireflies',
       version: '1.0.0'
     },
     components: {
