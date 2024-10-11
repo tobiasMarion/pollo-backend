@@ -1,21 +1,24 @@
+import fastifyCors from '@fastify/cors'
+import fastifyJwt from '@fastify/jwt'
+import fastifySwagger from '@fastify/swagger'
+import ScalarApiReference from '@scalar/fastify-api-reference'
 import { fastify } from 'fastify'
-import { routes } from './routes'
 import {
   jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
   ZodTypeProvider
 } from 'fastify-type-provider-zod'
-import fastifySwagger from '@fastify/swagger'
-import ScalarApiReference from '@scalar/fastify-api-reference'
-import fastifyCors from '@fastify/cors'
+
+import { routes } from './http/routes'
+import { env } from './lib/env'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
-app.register(routes)
+app.register(fastifyJwt, { secret: env.JWT_SECRET })
 
 app.register(fastifySwagger, {
   openapi: {
@@ -38,6 +41,7 @@ app.register(fastifySwagger, {
 })
 app.register(ScalarApiReference, { routePrefix: '/docs' })
 
+app.register(routes)
 app.register(fastifyCors)
 
 app.listen({ port: 3000 }).then(() => {
