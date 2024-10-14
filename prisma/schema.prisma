@@ -18,6 +18,7 @@ model User {
 
   tokens   Token[]
   accounts Account[]
+  Event    Event[]
 
   @@map("users")
 }
@@ -51,4 +52,23 @@ model Account {
 
   @@unique([provider, userId])
   @@map("accounts")
+}
+
+enum EventType {
+  SCREEN
+  TORCH
+}
+
+model Event {
+  id        String    @id @default(uuid())
+  name      String
+  type      EventType
+  latitude  Float
+  longitude Float
+
+  createdBy User   @relation(fields: [userId], references: [id])
+  userId    String @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }

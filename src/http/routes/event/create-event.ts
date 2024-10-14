@@ -3,6 +3,9 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
 import { auth } from '@/http/middlewares/auth'
+import { events } from '@/lib/events'
+import { prisma } from '@/lib/prisma'
+import { EventPubSub } from '@/services/events'
 
 export async function createEvent(app: FastifyInstance) {
   app
@@ -13,14 +16,12 @@ export async function createEvent(app: FastifyInstance) {
       {
         schema: {
           tags: ['Event'],
-          summary: `Create Event`,
+          summary: 'Create Event',
           body: z.object({
             name: z.string(),
-            locationReference: z.object({
-              latitude: z.number(),
-              longitude: z.number(),
-              radius: z.number()
-            })
+            latitude: z.number(),
+            longitude: z.number(),
+            type: z.enum(['TORCH', 'SCREEN'])
           }),
           response: {
             201: z.object({ eventId: z.string().uuid() })
@@ -30,7 +31,15 @@ export async function createEvent(app: FastifyInstance) {
       async (request, reply) => {
         const userId = await request.getCurrentUserId()
 
-        return reply.status(201).send({ eventId: userId })
+        const { name, latitude, longitude, type } = request.body
+
+        const { id } = await prisma.event.create({
+          data: { name, type, latitude, longitude, userId }
+        })
+
+        events[id] = new EventPubSub()
+
+        return reply.status(201).send({ eventId: id })
       }
     )
 }
