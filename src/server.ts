@@ -44,7 +44,7 @@ app.register(ScalarApiReference, { routePrefix: '/docs' })
 app.register(routes)
 app.register(fastifyCors)
 
-app.listen({ port: 3000 }).then(() => {
-  console.log(`HTTP Server running on http://localhost:${3000}`)
-  console.log(`Docs available on http://localhost:${3000}/docs`)
+app.listen({ port: env.PORT }).then(() => {
+  console.log(`HTTP Server running on http://localhost:${env.PORT}`)
+  console.log(`Docs available on http://localhost:${env.PORT}/docs`)
 })

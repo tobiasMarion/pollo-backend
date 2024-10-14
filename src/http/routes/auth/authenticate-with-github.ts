@@ -13,7 +13,9 @@ export async function authenticateWithGitHub(app: FastifyInstance) {
     {
       schema: {
         tags: ['Auth'],
-        summary: `Authenticate with GitHub.`,
+        summary: `Authenticate with GitHub`,
+        description: `Get code to send <a 
+          href="https://github.com/login/oauth/authorize?client_id=${env.GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${env.GITHUB_OAUTH_CLIENT_REDIRECT_URI}">here</a>.`,
         body: z.object({
           code: z.string()
         }),
