@@ -37,7 +37,7 @@ export async function createEvent(app: FastifyInstance) {
           data: { name, type, latitude, longitude, userId }
         })
 
-        events[id] = new EventPubSub()
+        events[id] = new EventPubSub({ adminId: userId })
 
         return reply.status(201).send({ eventId: id })
       }

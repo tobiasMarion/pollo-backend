@@ -3,20 +3,34 @@ export type Message = { messageType: MessageType; value: string }
 
 type EventState = 'OPEN' | 'ClOSED'
 
+type SendMessage = (message: Message) => void
+
 interface Subscriber {
   latitude: number
   longitude: number
-  sendMessage: (message: Message) => void
+  sendMessage: SendMessage
+}
+
+interface Admin {
+  userId: string
+  sendMessage: SendMessage | undefined
 }
 
 export class EventPubSub {
-  private admin: Subscriber | undefined
+  private admin: Admin
   private state: EventState = 'OPEN'
   private subscribers: Subscriber[] = []
   private pixels: Subscriber[][] = []
 
-  public setAdmin(admin: Subscriber) {
-    this.admin = admin
+  constructor({ adminId }: { adminId: string }) {
+    this.admin = {
+      userId: adminId,
+      sendMessage: undefined
+    }
+  }
+
+  public setAdminConnection(connection: (message: Message) => void) {
+    this.admin.sendMessage = connection
   }
 
   public subscribe(subscriber: Subscriber) {
@@ -28,13 +42,15 @@ export class EventPubSub {
 
     this.subscribers.push(subscriber)
 
-    this.admin?.sendMessage({
-      messageType: 'USER_JOINED',
-      value: JSON.stringify({
-        latitude: subscriber.latitude,
-        longitude: subscriber.longitude
+    if (this.admin.sendMessage) {
+      this.admin.sendMessage({
+        messageType: 'USER_JOINED',
+        value: JSON.stringify({
+          latitude: subscriber.latitude,
+          longitude: subscriber.longitude
+        })
       })
-    })
+    }
   }
 
   public publish(message: Message) {
