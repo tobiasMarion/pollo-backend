@@ -24,11 +24,11 @@ export async function getProfile(app: FastifyInstance) {
                 id: z.string().uuid(),
                 name: z.string().nullable(),
                 email: z.string().email(),
-                avatarUrl: z.string().url().nullable(),
-              }),
-            }),
-          },
-        },
+                avatarUrl: z.string().url().nullable()
+              })
+            })
+          }
+        }
       },
       async (request, reply) => {
         const userId = await request.getCurrentUserId()
@@ -38,9 +38,9 @@ export async function getProfile(app: FastifyInstance) {
             id: true,
             name: true,
             email: true,
-            avatarUrl: true,
+            avatarUrl: true
           },
-          where: { id: userId },
+          where: { id: userId }
         })
 
         if (!user) {
@@ -48,6 +48,6 @@ export async function getProfile(app: FastifyInstance) {
         }
 
         return reply.send({ user })
-      },
+      }
     )
 }
