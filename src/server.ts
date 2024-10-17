@@ -1,6 +1,7 @@
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
 import fastifySwagger from '@fastify/swagger'
+import ws from '@fastify/websocket'
 import ScalarApiReference from '@scalar/fastify-api-reference'
 import { fastify } from 'fastify'
 import {
@@ -41,6 +42,7 @@ app.register(fastifySwagger, {
 })
 app.register(ScalarApiReference, { routePrefix: '/docs' })
 
+app.register(ws)
 app.register(routes)
 app.register(fastifyCors)
 

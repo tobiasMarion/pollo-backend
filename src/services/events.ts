@@ -1,5 +1,7 @@
+import { randomUUID } from 'crypto'
+
 type MessageType = 'USER_JOINED' | 'SET_STATUS'
-export type Message = { messageType: MessageType; value: string }
+type Message = { messageType: MessageType; value: string }
 
 type EventState = 'OPEN' | 'ClOSED'
 
@@ -8,6 +10,9 @@ type SendMessage = (message: Message) => void
 interface Subscriber {
   latitude: number
   longitude: number
+  accuracy: number
+  altitude: number
+  altitudeAccuracy: number
   sendMessage: SendMessage
 }
 
@@ -19,7 +24,7 @@ interface Admin {
 export class EventPubSub {
   private admin: Admin
   private state: EventState = 'OPEN'
-  private subscribers: Subscriber[] = []
+  private subscribers: Record<string, Subscriber> = {}
   private pixels: Subscriber[][] = []
 
   constructor({ adminId }: { adminId: string }) {
@@ -33,27 +38,34 @@ export class EventPubSub {
     this.admin.sendMessage = connection
   }
 
-  public subscribe(subscriber: Subscriber) {
+  public subscribe(subscriber: Subscriber): string {
     if (this.state !== 'ClOSED') {
       throw new Error(
         'You cannot subscribe to an Event that is already closed.'
       )
     }
 
-    this.subscribers.push(subscriber)
+    const subscriberId = randomUUID()
+    this.subscribers[subscriberId] = subscriber
 
     if (this.admin.sendMessage) {
       this.admin.sendMessage({
         messageType: 'USER_JOINED',
         value: JSON.stringify({
+          id: subscriberId,
           latitude: subscriber.latitude,
-          longitude: subscriber.longitude
+          longitude: subscriber.longitude,
+          accuracy: subscriber.accuracy
         })
       })
     }
+
+    return subscriberId
   }
 
   public publish(message: Message) {
-    this.subscribers.forEach(({ sendMessage }) => sendMessage(message))
+    for (const subscriber of Object.values(this.subscribers)) {
+      subscriber.sendMessage(message)
+    }
   }
 }
