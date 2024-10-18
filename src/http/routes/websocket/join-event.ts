@@ -6,12 +6,12 @@ import { events } from '@/lib/events'
 
 export async function JoinEvent(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
-    '/event/:eventId/join',
+    '/events/:eventId/join',
     {
       websocket: true,
       schema: {
         tags: ['Event'],
-        summary: '[WS] Join event',
+        summary: '[WS] Join Event',
         description: `<strong>⚠️ Attention</strong>: <br />
           This is an WS route used to join an event 
           and receive instructions of how to paint that pixel. When a user send
