@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { events } from '@/lib/events'
 
-export async function JoinEvent(app: FastifyInstance) {
+export async function joinEvent(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/events/:eventId/join',
     {

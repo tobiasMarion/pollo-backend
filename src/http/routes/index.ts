@@ -3,9 +3,10 @@ import type { FastifyInstance } from 'fastify'
 import { authenticateWithGitHub } from './auth/authenticate-with-github'
 import { getProfile } from './auth/get-profile'
 import { createEvent } from './event/create-event'
-import { getEventById } from './event/getEvent'
+import { getEventById } from './event/get-event'
+import { getNearbyEvent } from './event/get-event-by-location'
 import { adminEvent } from './websocket/admin-event'
-import { JoinEvent } from './websocket/join-event'
+import { joinEvent } from './websocket/join-event'
 
 export async function routes(app: FastifyInstance) {
   // Auth
@@ -15,8 +16,9 @@ export async function routes(app: FastifyInstance) {
   // Events
   app.register(createEvent)
   app.register(getEventById)
+  app.register(getNearbyEvent)
 
   // Websockets
-  app.register(JoinEvent)
+  app.register(joinEvent)
   app.register(adminEvent)
 }
