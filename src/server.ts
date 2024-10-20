@@ -11,6 +11,7 @@ import {
   ZodTypeProvider
 } from 'fastify-type-provider-zod'
 
+import { errorHandler } from './http/error-handler'
 import { routes } from './http/routes'
 import { env } from './lib/env'
 
@@ -43,10 +44,11 @@ app.register(fastifySwagger, {
 app.register(ScalarApiReference, { routePrefix: '/docs' })
 
 app.register(ws)
+app.setErrorHandler(errorHandler)
 app.register(routes)
 app.register(fastifyCors)
 
-app.listen({ port: env.PORT }).then(() => {
+app.listen({ port: env.PORT, host: '0.0.0.0' }).then(() => {
   console.log(`HTTP Server running on http://localhost:${env.PORT}`)
   console.log(`Docs available on http://localhost:${env.PORT}/docs`)
 })

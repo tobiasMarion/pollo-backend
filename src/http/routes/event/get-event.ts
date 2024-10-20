@@ -16,7 +16,7 @@ export async function getEventById(app: FastifyInstance) {
           eventId: z.string().uuid()
         }),
         response: {
-          201: z.object({
+          200: z.object({
             event: z.object({
               id: z.string().uuid(),
               type: z.enum(['TORCH', 'SCREEN']),
