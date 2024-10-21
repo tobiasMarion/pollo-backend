@@ -19,25 +19,21 @@ export class EventPubSub {
     const subscriberId = randomUUID()
     this.subscribers[subscriberId] = subscriber
 
-    if (this.admin.sendMessage) {
-      this.notifyAdmin({
-        type: 'USER_JOINED',
-        id: subscriberId,
-        accuracy: subscriber.accuracy,
-        latitude: subscriber.latitude,
-        longitude: subscriber.longitude
-      })
-    }
+    this.notifyAdmin({
+      type: 'USER_JOINED',
+      id: subscriberId,
+      accuracy: subscriber.accuracy,
+      latitude: subscriber.latitude,
+      longitude: subscriber.longitude
+    })
 
     return subscriberId
   }
 
   public notifyAdmin(message: Message) {
-    if (!this.admin.sendMessage) {
-      return
+    if (this.admin.sendMessage) {
+      this.admin.sendMessage(JSON.stringify(message))
     }
-
-    this.admin.sendMessage(JSON.stringify(message))
   }
 
   public publish(message: Message) {

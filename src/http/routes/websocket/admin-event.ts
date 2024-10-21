@@ -41,7 +41,7 @@ export async function adminEvent(app: FastifyInstance) {
 
             isAuthenticated = true
 
-            events[params.eventId].setAdminConnection(socket.send)
+            events[params.eventId].setAdminConnection(socket.send.bind(socket))
           } catch {
             socket.terminate()
           }

@@ -22,20 +22,34 @@ export async function joinEvent(app: FastifyInstance) {
       }
     },
     async (connection, { params }) => {
-      connection.on('JOIN', (message) => {
-        const user = z
+      connection.on('message', (rawMessage) => {
+        const message = z
           .object({
+            type: z.string(),
             latitude: z.number().min(-90).max(90),
             longitude: z.number().min(-90).max(90),
             accuracy: z.number(),
             altitude: z.number(),
             altitudeAccuracy: z.number()
           })
-          .parse(message)
+          .parse(JSON.parse(rawMessage.toString()))
 
-        if (events[params.eventId]) {
+        const {
+          type,
+          latitude,
+          longitude,
+          accuracy,
+          altitude,
+          altitudeAccuracy
+        } = message
+
+        if (type === 'JOIN' && events[params.eventId]) {
           events[params.eventId].subscribe({
-            ...user,
+            latitude,
+            longitude,
+            accuracy,
+            altitude,
+            altitudeAccuracy,
             sendMessage: (message) => connection.send(JSON.stringify(message))
           })
         }
