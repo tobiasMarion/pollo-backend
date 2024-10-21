@@ -21,6 +21,7 @@ export async function getEventById(app: FastifyInstance) {
               id: z.string().uuid(),
               type: z.enum(['TORCH', 'SCREEN']),
               name: z.string(),
+              status: z.enum(['OPEN', 'CLOSED', 'FINISHED']),
               latitude: z.number().min(-90).max(90),
               longitude: z.number().min(-90).max(90),
               userId: z.string(),

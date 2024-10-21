@@ -1,10 +1,20 @@
+import type { EventStatus } from '@prisma/client'
 import { randomUUID } from 'crypto'
 
 export class EventPubSub {
   private admin: Admin
-  private subscribers: Record<string, Subscriber> = {}
+  private status: EventStatus
+  private subscribers: Record<string, Subscriber>
 
-  constructor({ adminId }: { adminId: string }) {
+  constructor({
+    status = 'OPEN',
+    adminId
+  }: {
+    status?: EventStatus
+    adminId: string
+  }) {
+    this.status = status
+    this.subscribers = {}
     this.admin = {
       userId: adminId,
       sendMessage: undefined
