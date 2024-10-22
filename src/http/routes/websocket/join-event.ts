@@ -21,8 +21,8 @@ export async function joinEvent(app: FastifyInstance) {
         })
       }
     },
-    async (connection, { params }) => {
-      connection.on('message', (rawMessage) => {
+    async (socket, { params }) => {
+      socket.on('message', (rawMessage) => {
         const message = z
           .object({
             type: z.string(),
@@ -50,7 +50,7 @@ export async function joinEvent(app: FastifyInstance) {
             accuracy,
             altitude,
             altitudeAccuracy,
-            sendMessage: (message) => connection.send(JSON.stringify(message))
+            sendMessage: socket.send.bind(socket)
           })
         }
       })
