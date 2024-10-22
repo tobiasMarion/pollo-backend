@@ -28,7 +28,7 @@
         "tabWidth": 2,
         "singleQuote": true,
         "trailingComma": "none",
-        "arrowParens": "always",
+        "arrowParens": "avoid",
         "semi": false,
         "endOfLine": "auto"
       }

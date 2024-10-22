@@ -1,21 +1,19 @@
 import type { PrismaClient } from '@prisma/client'
 
-import { EventPubSub } from '@/services/events/event-pub-sub'
+import { EventService } from '@/services/events/event-pub-sub'
 
 import { prisma } from './prisma'
 
-type EventsRecord = Record<string, EventPubSub>
-
 function getOpenEvents(prisma: PrismaClient) {
-  const record: EventsRecord = {}
+  const map = new Map<string, EventService>()
 
-  prisma.event.findMany({ where: { status: 'OPEN' } }).then((openEvents) => {
+  prisma.event.findMany({ where: { status: 'OPEN' } }).then(openEvents => {
     openEvents.forEach(({ id, userId, status }) => {
-      record[id] = new EventPubSub({ status, adminId: userId })
+      map.set(id, new EventService({ status, adminId: userId }))
     })
   })
 
-  return record
+  return map
 }
 
-export const events: EventsRecord = getOpenEvents(prisma)
+export const events = getOpenEvents(prisma)

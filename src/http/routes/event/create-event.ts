@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { auth } from '@/http/middlewares/auth'
 import { events } from '@/lib/events'
 import { prisma } from '@/lib/prisma'
-import { EventPubSub } from '@/services/events/event-pub-sub'
+import { EventService } from '@/services/events/event-pub-sub'
 
 export async function createEvent(app: FastifyInstance) {
   app
@@ -37,7 +37,7 @@ export async function createEvent(app: FastifyInstance) {
           data: { name, type, latitude, longitude, userId }
         })
 
-        events[id] = new EventPubSub({ adminId: userId })
+        events.set(id, new EventService({ adminId: userId }))
 
         return reply.status(201).send({ eventId: id })
       }
