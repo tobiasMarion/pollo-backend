@@ -11,11 +11,7 @@ export function getSetFromObjectAttributes<T, K extends keyof T>(
 ) {
   const set = new Set<T[K]>()
 
-  if (Array.isArray(input)) {
-    input.forEach(element => set.add(element[attribute]))
-  } else {
-    Object.values(input).forEach(element => set.add(element[attribute]))
-  }
+  input.forEach(element => set.add(element[attribute]))
 
   return set
 }

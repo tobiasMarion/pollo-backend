@@ -13,7 +13,7 @@ export class EventService {
   private status: EventStatus
   private subscribers = new Map<string, Subscriber>()
   private subscribersMatrix: Subscriber[][][] = []
-  private decimalPlacesPrecision = 5
+  private decimalPlacesPrecision = 3
 
   constructor({ status = 'OPEN', adminId }: EventServiceContructor) {
     this.status = status
@@ -64,6 +64,16 @@ export class EventService {
     }
   }
 
+  private initializeSubscribersMatrix(maxI: number, maxJ: number) {
+    this.subscribersMatrix = Array.from({ length: maxI }, () =>
+      Array.from({ length: maxJ }, () => [])
+    )
+  }
+
+  public getMatrix() {
+    return this.subscribersMatrix
+  }
+
   // Notes:
   //  1. There's probably a better way to do this
   //  2. I guess this method will block the loop in very large event.
@@ -71,11 +81,11 @@ export class EventService {
   public mapSubscribers() {
     const sortedUniqueLatitudes = [
       ...getSetFromObjectAttributes(this.subscribers, 'latitude')
-    ].sort()
+    ].toSorted()
 
     const sortedUniqueLongitudes = [
       ...getSetFromObjectAttributes(this.subscribers, 'longitude')
-    ].sort()
+    ].toSorted()
 
     // Use this set to find the place where we're gonna insert subscriber into
     // this.subscribersMatrix in O(1)
@@ -90,13 +100,16 @@ export class EventService {
       longitudeIndexMap.set(value, index)
     )
 
-    for (const subscriber of Object.values(this.subscribers)) {
+    this.initializeSubscribersMatrix(
+      sortedUniqueLatitudes.length,
+      sortedUniqueLongitudes.length
+    )
+
+    this.subscribers.forEach(subscriber => {
       const i = latitudeIndexMap.get(subscriber.latitude)
       const j = longitudeIndexMap.get(subscriber.longitude)
 
-      if (i !== undefined && j !== undefined) {
-        this.subscribersMatrix[i][j].push(subscriber)
-      }
-    }
+      this.subscribersMatrix[i!][j!].push(subscriber)
+    })
   }
 }

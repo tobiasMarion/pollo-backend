@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client'
 
-import { EventService } from '@/services/events/event-pub-sub'
+import { EventService } from '@/services/event/event'
 
 import { prisma } from './prisma'
 
