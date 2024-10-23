@@ -13,7 +13,11 @@ export class EventService {
   private status: EventStatus
   private subscribers = new Map<string, Subscriber>()
   private subscribersMatrix: Subscriber[][][] = []
-  private decimalPlacesPrecision = 3
+  private decimalPlacesPrecision = 5
+  // This value is a bit tricky
+  // It is direclty related to the event's resolution
+  // A very small value might generate a very large matrix
+  // A very big value will generate an resolution too small
 
   constructor({ status = 'OPEN', adminId }: EventServiceContructor) {
     this.status = status
@@ -23,8 +27,24 @@ export class EventService {
     }
   }
 
+  public getAdminId() {
+    return this.admin.userId
+  }
+
   public setAdminConnection(sendMessage: SendMessage) {
     this.admin.sendMessage = sendMessage
+  }
+
+  public getSubscribers() {
+    return Array.from(
+      this.subscribers,
+      ([id, { latitude, longitude, accuracy }]) => ({
+        id,
+        latitude,
+        longitude,
+        accuracy
+      })
+    )
   }
 
   public subscribe(subscriber: Subscriber): string {

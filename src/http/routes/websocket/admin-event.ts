@@ -24,7 +24,7 @@ export async function adminEvent(app: FastifyInstance) {
     (socket, { params }) => {
       let isAuthenticated = false
 
-      socket.on('message', async (messageBuffer) => {
+      socket.on('message', async messageBuffer => {
         const message: Message = JSON.parse(messageBuffer.toString())
 
         if (!isAuthenticated && message.type !== 'AUTHENTICATION') {
@@ -41,7 +41,9 @@ export async function adminEvent(app: FastifyInstance) {
 
             isAuthenticated = true
 
-            events[params.eventId].setAdminConnection(socket.send.bind(socket))
+            events
+              .get(params.eventId)
+              ?.setAdminConnection(socket.send.bind(socket))
           } catch {
             socket.terminate()
           }

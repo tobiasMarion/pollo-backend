@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { auth } from '@/http/middlewares/auth'
 import { events } from '@/lib/events'
 import { prisma } from '@/lib/prisma'
-import { EventService } from '@/services/event/event'
+import { EventService } from '@/services/event'
 
 export async function createEvent(app: FastifyInstance) {
   app
