@@ -12,7 +12,7 @@ export class EventService {
   private admin: Admin
   private status: EventStatus
   private subscribers = new Map<string, Subscriber>()
-  private subscribersMatrix: Subscriber[][][] = []
+  private subscribersMatrix: SendMessage[][][] = []
   private decimalPlacesPrecision = 5
   // This value is a bit tricky
   // It is direclty related to the event's resolution
@@ -72,6 +72,15 @@ export class EventService {
     return subscriberId
   }
 
+  public unsubscribe(subId: string) {
+    this.subscribers.delete(subId)
+
+    this.notifyAdmin({
+      type: 'USER_LEFT',
+      id: subId
+    })
+  }
+
   public notifyAdmin(message: Message) {
     if (this.admin.sendMessage) {
       this.admin.sendMessage(JSON.stringify(message))
@@ -129,7 +138,7 @@ export class EventService {
       const i = latitudeIndexMap.get(subscriber.latitude)
       const j = longitudeIndexMap.get(subscriber.longitude)
 
-      this.subscribersMatrix[i!][j!].push(subscriber)
+      this.subscribersMatrix[i!][j!].push(subscriber.sendMessage)
     })
   }
 }

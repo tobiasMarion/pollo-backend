@@ -5,9 +5,8 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
-    "start": "tsx src/server.ts",
     "lint:fix": "eslint --fix",
-    "test": "npx tsx ./src/services/event/test.ts"
+    "populate-event": "npx tsx --env-file=.env ./src/tests/populate-event.ts"
   },
   "repository": {
     "type": "git",

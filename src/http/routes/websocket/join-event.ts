@@ -22,6 +22,8 @@ export async function joinEvent(app: FastifyInstance) {
       }
     },
     async (socket, { params }) => {
+      let connectionId = ''
+
       socket.on('message', rawMessage => {
         const message = z
           .object({
@@ -46,7 +48,7 @@ export async function joinEvent(app: FastifyInstance) {
         const event = events.get(params.eventId)
 
         if (type === 'JOIN' && event) {
-          event.subscribe({
+          connectionId = event.subscribe({
             latitude,
             longitude,
             accuracy,
@@ -55,6 +57,10 @@ export async function joinEvent(app: FastifyInstance) {
             sendMessage: socket.send.bind(socket)
           })
         }
+      })
+
+      socket.on('close', () => {
+        events.get(params.eventId)?.unsubscribe(connectionId)
       })
     }
   )

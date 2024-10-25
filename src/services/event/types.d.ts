@@ -11,7 +11,12 @@ interface UserJoinedMessage {
   accuracy: number
 }
 
-type Message = UserJoinedMessage | AuthMessage
+interface UserLeftMessage {
+  type: 'USER_LEFT'
+  id: string
+}
+
+type Message = UserJoinedMessage | AuthMessage | UserLeftMessage
 type SendMessage = (message: string) => void
 
 interface Subscriber {
