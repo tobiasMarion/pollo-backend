@@ -5,13 +5,13 @@ export function truncateDecimalPlaces(n: number, decimalPlaces: number) {
   return number
 }
 
-export function getSetFromObjectAttributes<T, K extends keyof T>(
+export function getSortedUniqueAttributes<T, K extends keyof T>(
   input: T[] | Map<string, T>,
   attribute: K
-) {
-  const set = new Set<T[K]>()
+): T[K][] {
+  const uniqueValues = new Set<T[K]>()
 
-  input.forEach(element => set.add(element[attribute]))
+  input.forEach(element => uniqueValues.add(element[attribute]))
 
-  return set
+  return Array.from(uniqueValues).sort()
 }

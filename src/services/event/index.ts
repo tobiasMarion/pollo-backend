@@ -1,7 +1,7 @@
 import type { EventStatus } from '@prisma/client'
 import { randomUUID } from 'crypto'
 
-import { getSetFromObjectAttributes, truncateDecimalPlaces } from '@/utils'
+import { getSortedUniqueAttributes, truncateDecimalPlaces } from '@/utils'
 
 interface EventServiceContructor {
   status?: EventStatus
@@ -47,6 +47,16 @@ export class EventService {
     )
   }
 
+  public close() {
+    this.status = 'CLOSED'
+
+    if (this.subscribers.size === 0) {
+      return
+    }
+
+    return this.mapSubscribers()
+  }
+
   public subscribe(subscriber: Subscriber): string {
     const subscriberId = randomUUID()
     this.subscribers.set(subscriberId, {
@@ -69,6 +79,9 @@ export class EventService {
       longitude: subscriber.longitude
     })
 
+    if (this.status === 'CLOSED') {
+      console.log('oi')
+    }
     return subscriberId
   }
 
@@ -97,6 +110,10 @@ export class EventService {
     this.subscribersMatrix = Array.from({ length: maxI }, () =>
       Array.from({ length: maxJ }, () => [])
     )
+
+    return Array.from({ length: maxI }, () =>
+      Array.from({ length: maxJ }, () => 0)
+    )
   }
 
   public getMatrix() {
@@ -107,14 +124,16 @@ export class EventService {
   //  1. There's probably a better way to do this
   //  2. I guess this method will block the loop in very large event.
   //     If it is true, I think it can be done asynchronously
-  public mapSubscribers() {
-    const sortedUniqueLatitudes = [
-      ...getSetFromObjectAttributes(this.subscribers, 'latitude')
-    ].toSorted()
+  private mapSubscribers() {
+    const sortedUniqueLatitudes = getSortedUniqueAttributes(
+      this.subscribers,
+      'latitude'
+    )
 
-    const sortedUniqueLongitudes = [
-      ...getSetFromObjectAttributes(this.subscribers, 'longitude')
-    ].toSorted()
+    const sortedUniqueLongitudes = getSortedUniqueAttributes(
+      this.subscribers,
+      'longitude'
+    )
 
     // Use this set to find the place where we're gonna insert subscriber into
     // this.subscribersMatrix in O(1)
@@ -129,7 +148,7 @@ export class EventService {
       longitudeIndexMap.set(value, index)
     )
 
-    this.initializeSubscribersMatrix(
+    const participantPerPixel = this.initializeSubscribersMatrix(
       sortedUniqueLatitudes.length,
       sortedUniqueLongitudes.length
     )
@@ -139,6 +158,9 @@ export class EventService {
       const j = longitudeIndexMap.get(subscriber.longitude)
 
       this.subscribersMatrix[i!][j!].push(subscriber.sendMessage)
+      participantPerPixel[i!][j!]++
     })
+
+    return participantPerPixel
   }
 }

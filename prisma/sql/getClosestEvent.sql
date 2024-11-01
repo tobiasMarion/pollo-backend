@@ -14,6 +14,7 @@ FROM (
     )) AS distance
   FROM events, bounding_box
   WHERE
+    (status = 'OPEN' OR status = 'CLOSED') AND
     latitude BETWEEN (lat - lat_diff) AND (lat + lat_diff)
     AND longitude BETWEEN (lon - lon_diff) AND (lon + lon_diff)
 ) AS subquery
