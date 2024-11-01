@@ -1,7 +1,11 @@
 import type { EventStatus } from '@prisma/client'
 import { randomUUID } from 'crypto'
 
-import { getSortedUniqueAttributes, truncateDecimalPlaces } from '@/utils'
+import {
+  getIndexOfClosestValue,
+  getSortedUniqueAttributes,
+  truncateDecimalPlaces
+} from '@/utils'
 
 interface EventServiceContructor {
   status?: EventStatus
@@ -13,11 +17,17 @@ export class EventService {
   private status: EventStatus
   private subscribers = new Map<string, Subscriber>()
   private subscribersMatrix: SendMessage[][][] = []
-  private decimalPlacesPrecision = 5
+
+  private matrixValues: { latitude: number[]; longitude: number[] } = {
+    latitude: [],
+    longitude: []
+  }
+
   // This value is a bit tricky
   // It is direclty related to the event's resolution
   // A very small value might generate a very large matrix
   // A very big value will generate an resolution too small
+  private decimalPlacesPrecision = 5
 
   constructor({ status = 'OPEN', adminId }: EventServiceContructor) {
     this.status = status
@@ -59,7 +69,8 @@ export class EventService {
 
   public subscribe(subscriber: Subscriber): string {
     const subscriberId = randomUUID()
-    this.subscribers.set(subscriberId, {
+
+    const sub = {
       ...subscriber,
       latitude: truncateDecimalPlaces(
         subscriber.latitude,
@@ -69,7 +80,9 @@ export class EventService {
         subscriber.longitude,
         this.decimalPlacesPrecision
       )
-    })
+    }
+
+    this.subscribers.set(subscriberId, sub)
 
     this.notifyAdmin({
       type: 'USER_JOINED',
@@ -80,8 +93,20 @@ export class EventService {
     })
 
     if (this.status === 'CLOSED') {
-      console.log('oi')
+      const row = getIndexOfClosestValue(
+        this.matrixValues.latitude,
+        sub.latitude
+      )
+      const column = getIndexOfClosestValue(
+        this.matrixValues.longitude,
+        sub.longitude
+      )
+
+      if (row && column) {
+        this.subscribersMatrix[row][column].push(sub.sendMessage)
+      }
     }
+
     return subscriberId
   }
 
@@ -123,6 +148,7 @@ export class EventService {
   // Notes:
   //  1. There's probably a better way to do this
   //  2. I guess this method will block the loop in very large event.
+  //     (Actually it did not, probably there will be a bottleneck on the WS connections first)
   //     If it is true, I think it can be done asynchronously
   private mapSubscribers() {
     const sortedUniqueLatitudes = getSortedUniqueAttributes(
@@ -134,6 +160,10 @@ export class EventService {
       this.subscribers,
       'longitude'
     )
+
+    // This values are keeped out of method to people join on event after it is closed
+    this.matrixValues.latitude = sortedUniqueLatitudes
+    this.matrixValues.latitude = sortedUniqueLongitudes
 
     // Use this set to find the place where we're gonna insert subscriber into
     // this.subscribersMatrix in O(1)
