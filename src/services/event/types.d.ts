@@ -16,7 +16,19 @@ interface UserLeftMessage {
   id: string
 }
 
-type Message = UserJoinedMessage | AuthMessage | UserLeftMessage
+interface UserMatrixPosition {
+  type: 'USER_MATRIX_POSITION'
+  id: string
+  row: number
+  column: number
+}
+
+type Message =
+  | UserJoinedMessage
+  | AuthMessage
+  | UserLeftMessage
+  | UserMatrixPosition
+
 type SendMessage = (message: string) => void
 
 interface Subscriber {

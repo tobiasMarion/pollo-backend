@@ -57,12 +57,18 @@ export class EventService {
     )
   }
 
-  public close() {
-    this.status = 'CLOSED'
+  public open() {
+    this.status = 'OPEN'
+    this.subscribersMatrix = []
+    this.matrixValues = { latitude: [], longitude: [] }
+  }
 
+  public close() {
     if (this.subscribers.size === 0) {
       return
     }
+
+    this.status = 'CLOSED'
 
     return this.mapSubscribers()
   }
@@ -104,6 +110,13 @@ export class EventService {
 
       if (row && column) {
         this.subscribersMatrix[row][column].push(sub.sendMessage)
+
+        this.notifyAdmin({
+          type: 'USER_MATRIX_POSITION',
+          id: subscriberId,
+          row,
+          column
+        })
       }
     }
 
@@ -163,7 +176,7 @@ export class EventService {
 
     // This values are keeped out of method to people join on event after it is closed
     this.matrixValues.latitude = sortedUniqueLatitudes
-    this.matrixValues.latitude = sortedUniqueLongitudes
+    this.matrixValues.longitude = sortedUniqueLongitudes
 
     // Use this set to find the place where we're gonna insert subscriber into
     // this.subscribersMatrix in O(1)
@@ -183,12 +196,21 @@ export class EventService {
       sortedUniqueLongitudes.length
     )
 
-    this.subscribers.forEach(subscriber => {
+    this.subscribers.forEach((subscriber, id) => {
       const i = latitudeIndexMap.get(subscriber.latitude)
       const j = longitudeIndexMap.get(subscriber.longitude)
 
-      this.subscribersMatrix[i!][j!].push(subscriber.sendMessage)
-      participantPerPixel[i!][j!]++
+      if (i && j) {
+        this.subscribersMatrix[i][j].push(subscriber.sendMessage)
+        participantPerPixel[i][j]++
+
+        this.notifyAdmin({
+          type: 'USER_MATRIX_POSITION',
+          id,
+          row: i,
+          column: j
+        })
+      }
     })
 
     return participantPerPixel

@@ -4,7 +4,7 @@ import { WebSocket } from 'ws'
 
 import { env } from '@/lib/env'
 
-const AMOUNT_OF_USERS = 200
+const AMOUNT_OF_USERS = 500
 const BASE_URL = `http://localhost:${env.PORT}`
 
 function delay(ms: number) {

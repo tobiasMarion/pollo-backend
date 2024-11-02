@@ -7,11 +7,15 @@ import { prisma } from './prisma'
 function getOpenEvents(prisma: PrismaClient) {
   const map = new Map<string, EventService>()
 
-  prisma.event.findMany({ where: { status: 'OPEN' } }).then(openEvents => {
-    openEvents.forEach(({ id, userId, status }) => {
-      map.set(id, new EventService({ status, adminId: userId }))
+  prisma.event
+    .findMany({ where: { OR: [{ status: 'OPEN' }, { status: 'CLOSED' }] } })
+    .then(openEvents => {
+      openEvents.forEach(({ id, userId, status }) => {
+        const event = new EventService({ status, adminId: userId })
+        event.open()
+        map.set(id, event)
+      })
     })
-  })
 
   return map
 }

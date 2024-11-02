@@ -25,9 +25,7 @@ export async function closeEvent(app: FastifyInstance) {
           }),
           body: z.null(),
           response: {
-            200: z.object({
-              matrix: z.array(z.array(z.number())).optional()
-            })
+            200: z.null()
           }
         }
       },
@@ -45,14 +43,14 @@ export async function closeEvent(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        prisma.event.update({
+        await prisma.event.update({
           where: { id: eventId },
           data: { status: 'CLOSED' }
         })
 
-        const pixelDesnity = event.close()
+        event.close()
 
-        return reply.send({ matrix: pixelDesnity })
+        return reply.send()
       }
     )
 }
