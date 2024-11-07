@@ -25,6 +25,6 @@ Once the event is closed, the admin can send through websockets predefined effec
 
 
 📬 Contact <a name="contact"></a>
-📧 Tobias Cadoná Marion — your-email@example.com
+📧 Tobias Cadoná Marion — contato@tobiasmarion.com
 
 Made with 💜 by Tobias
