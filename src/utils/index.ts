@@ -1,6 +1,6 @@
 export function truncateDecimalPlaces(n: number, decimalPlaces: number) {
   const pow = Math.pow(10, decimalPlaces)
-  const number = Math.trunc(n * pow) / pow
+  const number = Math.round(n * pow) / pow
 
   return number
 }

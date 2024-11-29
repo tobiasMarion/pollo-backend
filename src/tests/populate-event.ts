@@ -4,7 +4,7 @@ import { WebSocket } from 'ws'
 
 import { env } from '@/lib/env'
 
-const AMOUNT_OF_USERS = 500
+const AMOUNT_OF_USERS = 700
 const BASE_URL = `http://localhost:${env.PORT}`
 
 function delay(ms: number) {
@@ -55,7 +55,7 @@ rl.question(`Event Id: `, async id => {
   const { event } = await getEvent<{ event: Event }>(id)
 
   for (let index = 0; index < AMOUNT_OF_USERS; index++) {
-    await delay(5)
+    await delay(2)
     joinEventAround(event.id, { x: event.longitude, y: event.latitude })
   }
 

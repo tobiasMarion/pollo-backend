@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
+import { BadRequestError } from '@/http/_errors/bad-request'
 import { NotFoundError } from '@/http/_errors/not-found'
 import { UnauthorizedError } from '@/http/_errors/unauthorized-error'
 import { auth } from '@/http/middlewares/auth'
@@ -25,7 +26,9 @@ export async function closeEvent(app: FastifyInstance) {
           }),
           body: z.null(),
           response: {
-            200: z.null()
+            200: z.object({
+              distribution: z.array(z.array(z.number()))
+            })
           }
         }
       },
@@ -43,14 +46,18 @@ export async function closeEvent(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
+        const matrixDistribution = event.close()
+
+        if (!matrixDistribution) {
+          throw new BadRequestError('There is no subscribers on this event')
+        }
+
         await prisma.event.update({
           where: { id: eventId },
           data: { status: 'CLOSED' }
         })
 
-        event.close()
-
-        return reply.send()
+        return reply.send({ distribution: matrixDistribution })
       }
     )
 }

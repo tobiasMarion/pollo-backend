@@ -23,20 +23,29 @@ interface UserMatrixPosition {
   column: number
 }
 
+interface Effect {
+  type: 'EFFECT'
+}
+
 type Message =
   | UserJoinedMessage
   | AuthMessage
   | UserLeftMessage
   | UserMatrixPosition
+  | Effect
 
-type SendMessage = (message: string) => void
+type SendMessage = (message: Message) => void
 
-interface Subscriber {
+interface User {
   latitude: number
   longitude: number
   accuracy: number
   altitude: number
   altitudeAccuracy: number
+  sendMessage: (string: string) => void
+}
+
+interface Subscriber extends User {
   sendMessage: SendMessage
 }
 

@@ -27,7 +27,7 @@ export class EventService {
   // It is direclty related to the event's resolution
   // A very small value might generate a very large matrix
   // A very big value will generate an resolution too small
-  private decimalPlacesPrecision = 5
+  private decimalPlacesPrecision = 6
 
   constructor({ status = 'OPEN', adminId }: EventServiceContructor) {
     this.status = status
@@ -41,8 +41,10 @@ export class EventService {
     return this.admin.userId
   }
 
-  public setAdminConnection(sendMessage: SendMessage) {
-    this.admin.sendMessage = sendMessage
+  public setAdminConnection(send: (string: string) => void) {
+    this.admin.sendMessage = (message: Message) => {
+      send(JSON.stringify(message))
+    }
   }
 
   public getSubscribers() {
@@ -73,19 +75,22 @@ export class EventService {
     return this.mapSubscribers()
   }
 
-  public subscribe(subscriber: Subscriber): string {
+  public subscribe(user: User): string {
     const subscriberId = randomUUID()
 
-    const sub = {
-      ...subscriber,
+    const sub: Subscriber = {
+      ...user,
       latitude: truncateDecimalPlaces(
-        subscriber.latitude,
+        user.latitude,
         this.decimalPlacesPrecision
       ),
       longitude: truncateDecimalPlaces(
-        subscriber.longitude,
+        user.longitude,
         this.decimalPlacesPrecision
-      )
+      ),
+      sendMessage: (message: Message) => {
+        user.sendMessage(JSON.stringify(message))
+      }
     }
 
     this.subscribers.set(subscriberId, sub)
@@ -93,9 +98,9 @@ export class EventService {
     this.notifyAdmin({
       type: 'USER_JOINED',
       id: subscriberId,
-      accuracy: subscriber.accuracy,
-      latitude: subscriber.latitude,
-      longitude: subscriber.longitude
+      accuracy: sub.accuracy,
+      latitude: sub.latitude,
+      longitude: sub.longitude
     })
 
     if (this.status === 'CLOSED') {
@@ -134,7 +139,7 @@ export class EventService {
 
   public notifyAdmin(message: Message) {
     if (this.admin.sendMessage) {
-      this.admin.sendMessage(JSON.stringify(message))
+      this.admin.sendMessage(message)
     }
   }
 
@@ -191,6 +196,8 @@ export class EventService {
       longitudeIndexMap.set(value, index)
     )
 
+    console.log(sortedUniqueLatitudes.length, sortedUniqueLongitudes.length)
+
     const participantPerPixel = this.initializeSubscribersMatrix(
       sortedUniqueLatitudes.length,
       sortedUniqueLongitudes.length
@@ -200,16 +207,21 @@ export class EventService {
       const i = latitudeIndexMap.get(subscriber.latitude)
       const j = longitudeIndexMap.get(subscriber.longitude)
 
-      if (i && j) {
+      if (i !== undefined && j !== undefined) {
         this.subscribersMatrix[i][j].push(subscriber.sendMessage)
         participantPerPixel[i][j]++
 
-        this.notifyAdmin({
+        const message: Message = {
           type: 'USER_MATRIX_POSITION',
           id,
           row: i,
           column: j
-        })
+        }
+
+        console.log(message)
+
+        this.notifyAdmin(message)
+        subscriber.sendMessage(message)
       }
     })
 
