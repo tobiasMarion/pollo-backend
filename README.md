@@ -4,6 +4,8 @@
 
 ![Badge do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-blue?style=flat-square)
 
+> 🇧🇷 [If you want to understand what is really going on here, I suggest this reading](https://www.tabnews.com.br/tobiasMarion/tentando-recriar-as-pulseiras-do-coldplay-com-um-jr-e-js)
+
 ---
 
 ## 📜 Table of Contents
