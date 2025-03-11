@@ -3,20 +3,24 @@ WITH bounding_box AS (
     CAST($1 AS double precision) AS lat,
     CAST($2 AS double precision) AS lon,
     1 / 111.32 AS lat_diff, -- Aproximadamente 1 km em latitude
-    1 / (111.32 * cos(radians(CAST($1 AS double precision)))) AS lon_diff -- Aproximadamente 1 km em longitude ajustado pela latitude
+    CASE 
+      WHEN abs(CAST($1 AS double precision)) < 89 THEN 1 / (111.32 * cos(radians(CAST($1 AS double precision))))
+      ELSE NULL
+    END AS lon_diff -- Ajuste para evitar problemas próximos aos polos
 )
 SELECT *
 FROM (
-  SELECT *,
+  SELECT e.*, 
     (6371 * acos(
-      cos(radians(CAST($1 AS double precision))) * cos(radians(latitude)) * cos(radians(longitude) - 
-      radians(CAST($2 AS double precision))) + sin(radians(CAST($1 AS double precision))) * sin(radians(latitude))
+      cos(radians(bb.lat)) * cos(radians(e.latitude)) * cos(radians(e.longitude) - radians(bb.lon)) + 
+      sin(radians(bb.lat)) * sin(radians(e.latitude))
     )) AS distance
-  FROM events, bounding_box
-  WHERE
-    (status = 'OPEN' OR status = 'CLOSED') AND
-    latitude BETWEEN (lat - lat_diff) AND (lat + lat_diff)
-    AND longitude BETWEEN (lon - lon_diff) AND (lon + lon_diff)
+  FROM events e
+  CROSS JOIN bounding_box bb
+  WHERE 
+    e.status IN ('OPEN', 'CLOSED') AND
+    e.latitude BETWEEN (bb.lat - bb.lat_diff) AND (bb.lat + bb.lat_diff) AND
+    (bb.lon_diff IS NULL OR e.longitude BETWEEN (bb.lon - bb.lon_diff) AND (bb.lon + bb.lon_diff))
 ) AS subquery
 ORDER BY distance
 LIMIT 1;

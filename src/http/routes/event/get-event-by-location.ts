@@ -16,7 +16,7 @@ export async function getEventAround(app: FastifyInstance) {
         summary: 'Get Event Around',
         querystring: z.object({
           latitude: z.coerce.number().min(-90).max(90),
-          longitude: z.coerce.number().min(-90).max(90)
+          longitude: z.coerce.number().min(-180).max(180)
         }),
         response: {
           200: z.object({
@@ -39,6 +39,8 @@ export async function getEventAround(app: FastifyInstance) {
       const result = await prisma.$queryRawTyped(
         getClosestEvent(query.latitude, query.longitude)
       )
+
+      console.log(result)
 
       if (result.length === 0) {
         throw new NotFoundError('There was not any event around you.')
