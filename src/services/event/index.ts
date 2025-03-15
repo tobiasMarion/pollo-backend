@@ -1,36 +1,14 @@
-import type { EventStatus } from '@prisma/client'
 import { randomUUID } from 'crypto'
 
-import {
-  getIndexOfClosestValue,
-  getSortedUniqueAttributes,
-  truncateDecimalPlaces
-} from '@/utils'
-
 interface EventServiceContructor {
-  status?: EventStatus
   adminId: string
 }
 
 export class EventService {
   private admin: Admin
-  private status: EventStatus
   private subscribers = new Map<string, Subscriber>()
-  private subscribersMatrix: SendMessage[][][] = []
 
-  private matrixValues: { latitude: number[]; longitude: number[] } = {
-    latitude: [],
-    longitude: []
-  }
-
-  // This value is a bit tricky
-  // It is direclty related to the event's resolution
-  // A very small value might generate a very large matrix
-  // A very big value will generate an resolution too small
-  private decimalPlacesPrecision = 6
-
-  constructor({ status = 'OPEN', adminId }: EventServiceContructor) {
-    this.status = status
+  constructor({ adminId }: EventServiceContructor) {
     this.admin = {
       userId: adminId,
       sendMessage: undefined
@@ -50,91 +28,12 @@ export class EventService {
   public getSubscribers() {
     return Array.from(
       this.subscribers,
-      ([id, { latitude, longitude, accuracy }]) => ({
-        id,
-        latitude,
-        longitude,
-        accuracy
+      ([subscriberId, { deviceId, location }]) => ({
+        subscriberId,
+        deviceId,
+        location
       })
     )
-  }
-
-  public open() {
-    this.status = 'OPEN'
-    this.subscribersMatrix = []
-    this.matrixValues = { latitude: [], longitude: [] }
-  }
-
-  public close() {
-    if (this.subscribers.size === 0) {
-      return
-    }
-
-    this.status = 'CLOSED'
-
-    return this.mapSubscribers()
-  }
-
-  public subscribe(user: User): string {
-    const subscriberId = randomUUID()
-
-    const sub: Subscriber = {
-      ...user,
-      latitude: truncateDecimalPlaces(
-        user.latitude,
-        this.decimalPlacesPrecision
-      ),
-      longitude: truncateDecimalPlaces(
-        user.longitude,
-        this.decimalPlacesPrecision
-      ),
-      sendMessage: (message: Message) => {
-        user.sendMessage(JSON.stringify(message))
-      }
-    }
-
-    this.subscribers.set(subscriberId, sub)
-
-    this.notifyAdmin({
-      type: 'USER_JOINED',
-      id: subscriberId,
-      accuracy: sub.accuracy,
-      latitude: sub.latitude,
-      longitude: sub.longitude
-    })
-
-    if (this.status === 'CLOSED') {
-      const row = getIndexOfClosestValue(
-        this.matrixValues.latitude,
-        sub.latitude
-      )
-      const column = getIndexOfClosestValue(
-        this.matrixValues.longitude,
-        sub.longitude
-      )
-
-      if (row && column) {
-        this.subscribersMatrix[row][column].push(sub.sendMessage)
-
-        this.notifyAdmin({
-          type: 'USER_MATRIX_POSITION',
-          id: subscriberId,
-          row,
-          column
-        })
-      }
-    }
-
-    return subscriberId
-  }
-
-  public unsubscribe(subId: string) {
-    this.subscribers.delete(subId)
-
-    this.notifyAdmin({
-      type: 'USER_LEFT',
-      id: subId
-    })
   }
 
   public notifyAdmin(message: Message) {
@@ -144,87 +43,46 @@ export class EventService {
   }
 
   public publish(message: Message) {
+    this.notifyAdmin(message)
+
     for (const subscriber of Object.values(this.subscribers)) {
       subscriber.sendMessage(JSON.stringify(message))
     }
   }
 
-  private initializeSubscribersMatrix(maxI: number, maxJ: number) {
-    this.subscribersMatrix = Array.from({ length: maxI }, () =>
-      Array.from({ length: maxJ }, () => [])
-    )
+  public subscribe(subscriber: Subscriber): string {
+    const subscriberId = randomUUID()
 
-    return Array.from({ length: maxI }, () =>
-      Array.from({ length: maxJ }, () => 0)
-    )
-  }
-
-  public getMatrix() {
-    return this.subscribersMatrix
-  }
-
-  // Notes:
-  //  1. There's probably a better way to do this
-  //  2. I guess this method will block the loop in very large event.
-  //     (Actually it did not, probably there will be a bottleneck on the WS connections first)
-  //     If it is true, I think it can be done asynchronously
-  private mapSubscribers() {
-    const sortedUniqueLatitudes = getSortedUniqueAttributes(
-      this.subscribers,
-      'latitude'
-    )
-
-    const sortedUniqueLongitudes = getSortedUniqueAttributes(
-      this.subscribers,
-      'longitude'
-    )
-
-    // This values are keeped out of method to people join on event after it is closed
-    this.matrixValues.latitude = sortedUniqueLatitudes
-    this.matrixValues.longitude = sortedUniqueLongitudes
-
-    // Use this set to find the place where we're gonna insert subscriber into
-    // this.subscribersMatrix in O(1)
-    const latitudeIndexMap = new Map<number, number>()
-    const longitudeIndexMap = new Map<number, number>()
-
-    sortedUniqueLatitudes.forEach((value, index) =>
-      latitudeIndexMap.set(value, index)
-    )
-
-    sortedUniqueLongitudes.forEach((value, index) =>
-      longitudeIndexMap.set(value, index)
-    )
-
-    console.log(sortedUniqueLatitudes.length, sortedUniqueLongitudes.length)
-
-    const participantPerPixel = this.initializeSubscribersMatrix(
-      sortedUniqueLatitudes.length,
-      sortedUniqueLongitudes.length
-    )
-
-    this.subscribers.forEach((subscriber, id) => {
-      const i = latitudeIndexMap.get(subscriber.latitude)
-      const j = longitudeIndexMap.get(subscriber.longitude)
-
-      if (i !== undefined && j !== undefined) {
-        this.subscribersMatrix[i][j].push(subscriber.sendMessage)
-        participantPerPixel[i][j]++
-
-        const message: Message = {
-          type: 'USER_MATRIX_POSITION',
-          id,
-          row: i,
-          column: j
-        }
-
-        console.log(message)
-
-        this.notifyAdmin(message)
+    const sub: Subscriber = {
+      ...subscriber,
+      sendMessage: (message: Message) => {
         subscriber.sendMessage(message)
       }
+    }
+
+    this.subscribers.set(subscriberId, sub)
+
+    this.publish({
+      type: 'USER_JOINED',
+      subscriberId,
+      deviceId: sub.deviceId,
+      location: sub.location
     })
 
-    return participantPerPixel
+    return subscriberId
+  }
+
+  public unsubscribe(subscriberId: string) {
+    const sub = this.subscribers.get(subscriberId)
+
+    if (!sub) {
+      return
+    }
+
+    this.publish({
+      type: 'USER_LEFT',
+      subscriberId,
+      deviceId: sub.deviceId
+    })
   }
 }

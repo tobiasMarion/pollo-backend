@@ -2,7 +2,6 @@ import type { FastifyInstance } from 'fastify'
 
 import { authenticateWithGitHub } from './auth/authenticate-with-github'
 import { getProfile } from './auth/get-profile'
-import { closeEvent } from './event/close-event'
 import { createEvent } from './event/create-event'
 import { getEventById } from './event/get-event'
 import { getEventAround } from './event/get-event-by-location'
@@ -20,7 +19,6 @@ export async function routes(app: FastifyInstance) {
   app.register(getEventById)
   app.register(getEventAround)
   app.register(getParticipants)
-  app.register(closeEvent)
 
   // Websockets
   app.register(joinEvent)

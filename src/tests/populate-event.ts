@@ -1,4 +1,5 @@
 import { Event } from '@prisma/client'
+import { randomUUID } from 'crypto'
 import readLine from 'readline'
 import { WebSocket } from 'ws'
 
@@ -33,11 +34,14 @@ async function joinEventAround(id: string, origin: { x: number; y: number }) {
   ws.onopen = () => {
     const message = JSON.stringify({
       type: 'JOIN',
-      longitude: getValueAround(origin.x, 0.003),
-      latitude: getValueAround(origin.y, 0.003),
-      accuracy: 1,
-      altitude: 1,
-      altitudeAccuracy: 1
+      deviceId: randomUUID(),
+      location: {
+        longitude: getValueAround(origin.x, 0.003),
+        latitude: getValueAround(origin.y, 0.003),
+        horizontalAccuracy: 1,
+        altitude: 1,
+        verticalAccuracy: 1
+      }
     })
 
     ws.send(message)

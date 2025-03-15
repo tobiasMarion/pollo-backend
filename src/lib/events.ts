@@ -8,11 +8,10 @@ function getOpenEvents(prisma: PrismaClient) {
   const map = new Map<string, EventService>()
 
   prisma.event
-    .findMany({ where: { OR: [{ status: 'OPEN' }, { status: 'CLOSED' }] } })
+    .findMany({ where: { OR: [{ status: 'OPEN' }] } })
     .then(openEvents => {
-      openEvents.forEach(({ id, userId, status }) => {
-        const event = new EventService({ status, adminId: userId })
-        event.open()
+      openEvents.forEach(({ id, userId }) => {
+        const event = new EventService({ adminId: userId })
         map.set(id, event)
       })
     })

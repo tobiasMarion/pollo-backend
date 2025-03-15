@@ -62,7 +62,6 @@ enum EventType {
 
 enum EventStatus {
   OPEN
-  CLOSED
   FINISHED
 }
 

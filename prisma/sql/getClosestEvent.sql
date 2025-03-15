@@ -18,7 +18,7 @@ FROM (
   FROM events e
   CROSS JOIN bounding_box bb
   WHERE 
-    e.status IN ('OPEN', 'CLOSED') AND
+    e.status = 'OPEN' AND
     e.latitude BETWEEN (bb.lat - bb.lat_diff) AND (bb.lat + bb.lat_diff) AND
     (bb.lon_diff IS NULL OR e.longitude BETWEEN (bb.lon - bb.lon_diff) AND (bb.lon + bb.lon_diff))
 ) AS subquery

@@ -1,3 +1,11 @@
+interface Location {
+  latitude: number
+  longitude: number
+  horizontalAccuracy: number
+  altitude: number
+  verticalAccuracy: number
+}
+
 interface AuthMessage {
   type: 'AUTHENTICATION'
   token: string
@@ -5,47 +13,28 @@ interface AuthMessage {
 
 interface UserJoinedMessage {
   type: 'USER_JOINED'
-  id: string
-  latitude: number
-  longitude: number
-  accuracy: number
+  subscriberId: string
+  deviceId: string
+  location: Location
 }
 
 interface UserLeftMessage {
   type: 'USER_LEFT'
-  id: string
-}
-
-interface UserMatrixPosition {
-  type: 'USER_MATRIX_POSITION'
-  id: string
-  row: number
-  column: number
+  subscriberId: string
+  deviceId: string
 }
 
 interface Effect {
   type: 'EFFECT'
 }
 
-type Message =
-  | UserJoinedMessage
-  | AuthMessage
-  | UserLeftMessage
-  | UserMatrixPosition
-  | Effect
+type Message = UserJoinedMessage | AuthMessage | UserLeftMessage | Effect
 
 type SendMessage = (message: Message) => void
 
-interface User {
-  latitude: number
-  longitude: number
-  accuracy: number
-  altitude: number
-  altitudeAccuracy: number
-  sendMessage: (string: string) => void
-}
-
-interface Subscriber extends User {
+interface Subscriber {
+  deviceId: string
+  location: Location
   sendMessage: SendMessage
 }
 
