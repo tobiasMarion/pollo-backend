@@ -22,6 +22,11 @@ export const messageSchemas = {
     location: locationSchema
   }),
 
+  LOCATION_UPDATE: z.object({
+    type: z.literal('LOCATION_UPDATE'),
+    location: locationSchema
+  }),
+
   USER_JOINED: z.object({
     type: z.literal('NEW_SUB'),
     deviceId: z.string()
@@ -43,6 +48,7 @@ export const messageSchemas = {
 export const messageSchema = z.discriminatedUnion('type', [
   messageSchemas.AUTH,
   messageSchemas.JOIN,
+  messageSchemas.LOCATION_UPDATE,
   messageSchemas.USER_JOINED,
   messageSchemas.DISTANCE,
   messageSchemas.USER_LEFT

@@ -1,5 +1,6 @@
 import type {
   Admin,
+  Location,
   Message,
   SendMessage,
   Subscriber
@@ -58,6 +59,16 @@ export class EventService {
     })
 
     this.subscribers.set(subscriber.deviceId, subscriber)
+  }
+
+  public updateSubLocation(devideId: string, location: Location) {
+    const sub = this.subscribers.get(devideId)
+
+    if (!sub) {
+      return
+    }
+
+    this.subscribers.set(devideId, { ...sub, location })
   }
 
   public unsubscribe(deviceId: string) {

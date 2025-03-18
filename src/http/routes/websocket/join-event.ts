@@ -28,7 +28,7 @@ export async function joinEvent(app: FastifyInstance) {
     },
     async (socket, { params }) => {
       const event = events.get(params.eventId)
-      const deviceId = ''
+      let deviceId = ''
 
       if (!event) {
         socket.close()
@@ -49,13 +49,25 @@ export async function joinEvent(app: FastifyInstance) {
 
         const { data } = result
 
+        if (!deviceId && data.type !== 'JOIN') {
+          socket.send(
+            'You have to join the event first before sending and receiveing messages'
+          )
+          socket.close()
+          return
+        }
+
         switch (data.type) {
           case 'JOIN':
+            deviceId = data.deviceId
             event.subscribe({
               ...data,
               sendMessage: (message: Message) =>
                 socket.send.bind(socket)(JSON.stringify(message))
             })
+            break
+          case 'LOCATION_UPDATE':
+            event.updateSubLocation(deviceId, data.location)
             break
         }
       })
