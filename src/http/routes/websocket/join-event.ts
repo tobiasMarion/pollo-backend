@@ -3,6 +3,11 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
 import { events } from '@/lib/events'
+import {
+  type Message,
+  messageSchema,
+  safeParseJsonMessage
+} from '@/schemas/messages'
 
 export async function joinEvent(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
@@ -22,44 +27,41 @@ export async function joinEvent(app: FastifyInstance) {
       }
     },
     async (socket, { params }) => {
-      let connectionId = ''
+      const event = events.get(params.eventId)
+      const deviceId = ''
+
+      if (!event) {
+        socket.close()
+        return
+      }
 
       socket.on('message', rawMessage => {
-        const message = z
-          .object({
-            type: z.string(),
-            deviceId: z.string(),
-            location: z.object({
-              latitude: z.number().min(-90).max(90),
-              longitude: z.number().min(-90).max(90),
-              horizontalAccuracy: z.number(),
-              altitude: z.number(),
-              verticalAccuracy: z.number()
-            })
-          })
-          .safeParse(JSON.parse(rawMessage.toString()))
+        const result = safeParseJsonMessage(
+          rawMessage.toString(),
+          messageSchema
+        )
 
-        if (!message.success) {
+        if (!result.success) {
+          socket.send(JSON.stringify(result.error))
           socket.close()
           return
         }
 
-        const { type, deviceId, location } = message.data
+        const { data } = result
 
-        const event = events.get(params.eventId)
-
-        if (type === 'JOIN' && event) {
-          connectionId = event.subscribe({
-            deviceId,
-            location,
-            sendMessage: (message: Message) =>
-              socket.send.bind(socket)(JSON.stringify(message))
-          })
+        switch (data.type) {
+          case 'JOIN':
+            event.subscribe({
+              ...data,
+              sendMessage: (message: Message) =>
+                socket.send.bind(socket)(JSON.stringify(message))
+            })
+            break
         }
       })
 
       socket.on('close', () => {
-        events.get(params.eventId)?.unsubscribe(connectionId)
+        event.unsubscribe(deviceId)
       })
     }
   )

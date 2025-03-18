@@ -40,8 +40,6 @@ export async function getEventAround(app: FastifyInstance) {
         getClosestEvent(query.latitude, query.longitude)
       )
 
-      console.log(result)
-
       if (result.length === 0) {
         throw new NotFoundError('There was not any event around you.')
       }

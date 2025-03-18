@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { events } from '@/lib/events'
 import { prisma } from '@/lib/prisma'
+import { type Message, messageSchema } from '@/schemas/messages'
 
 export async function adminEvent(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
@@ -25,28 +26,40 @@ export async function adminEvent(app: FastifyInstance) {
       let isAuthenticated = false
 
       socket.on('message', async messageBuffer => {
-        const message: Message = JSON.parse(messageBuffer.toString())
+        const { success, data, error } = messageSchema.safeParse(
+          JSON.parse(messageBuffer.toString())
+        )
 
-        if (!isAuthenticated && message.type !== 'AUTHENTICATION') {
-          socket.terminate()
+        if (!success) {
+          socket.send(error.toString())
+          socket.close()
+          return
         }
 
-        if (message.type === 'AUTHENTICATION') {
-          try {
-            const { sub } = app.jwt.verify<{ sub: string }>(message.token)
+        if (!isAuthenticated && data.type !== 'AUTHENTICATION') {
+          socket.send('UNAUTHORIZED')
+          socket.close()
+        }
 
-            await prisma.event.findUniqueOrThrow({
-              where: { id: params.eventId, userId: sub }
-            })
+        if (data.type === 'AUTHENTICATION') {
+          const { sub } = app.jwt.verify<{ sub: string }>(data.token)
 
-            isAuthenticated = true
+          const event = await prisma.event.findUnique({
+            where: { id: params.eventId, userId: sub, status: 'OPEN' }
+          })
 
-            events
-              .get(params.eventId)
-              ?.setAdminConnection(socket.send.bind(socket))
-          } catch {
-            socket.terminate()
+          if (!event) {
+            socket.send('UNAUTHORIZED')
+            socket.close()
+
+            return
           }
+
+          isAuthenticated = true
+
+          events.get(params.eventId)?.setAdminConnection((message: Message) => {
+            socket.send.bind(socket)(JSON.stringify(message))
+          })
         }
       })
     }

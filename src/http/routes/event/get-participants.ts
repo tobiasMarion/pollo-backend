@@ -23,7 +23,6 @@ export async function getParticipants(app: FastifyInstance) {
             200: z.object({
               participants: z.array(
                 z.object({
-                  subscriberId: z.string().uuid(),
                   deviceId: z.string(),
                   location: z.object({
                     latitude: z.number().min(-90).max(90),

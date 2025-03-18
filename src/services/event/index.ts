@@ -1,4 +1,9 @@
-import { randomUUID } from 'crypto'
+import type {
+  Admin,
+  Message,
+  SendMessage,
+  Subscriber
+} from '@/schemas/messages'
 
 interface EventServiceContructor {
   adminId: string
@@ -19,21 +24,15 @@ export class EventService {
     return this.admin.userId
   }
 
-  public setAdminConnection(send: (string: string) => void) {
-    this.admin.sendMessage = (message: Message) => {
-      send(JSON.stringify(message))
-    }
+  public setAdminConnection(send: SendMessage) {
+    this.admin.sendMessage = send
   }
 
   public getSubscribers() {
-    return Array.from(
-      this.subscribers,
-      ([subscriberId, { deviceId, location }]) => ({
-        subscriberId,
-        deviceId,
-        location
-      })
-    )
+    return Array.from(this.subscribers, ([deviceId, { location }]) => ({
+      deviceId,
+      location
+    }))
   }
 
   public notifyAdmin(message: Message) {
@@ -45,44 +44,34 @@ export class EventService {
   public publish(message: Message) {
     this.notifyAdmin(message)
 
-    for (const subscriber of Object.values(this.subscribers)) {
-      subscriber.sendMessage(JSON.stringify(message))
-    }
+    console.log(message)
+
+    this.subscribers.forEach(sub => {
+      sub.sendMessage(message)
+    })
   }
 
-  public subscribe(subscriber: Subscriber): string {
-    const subscriberId = randomUUID()
-
-    const sub: Subscriber = {
-      ...subscriber,
-      sendMessage: (message: Message) => {
-        subscriber.sendMessage(message)
-      }
-    }
-
-    this.subscribers.set(subscriberId, sub)
-
+  public subscribe(subscriber: Subscriber) {
     this.publish({
-      type: 'USER_JOINED',
-      subscriberId,
-      deviceId: sub.deviceId,
-      location: sub.location
+      type: 'NEW_SUB',
+      deviceId: subscriber.deviceId
     })
 
-    return subscriberId
+    this.subscribers.set(subscriber.deviceId, subscriber)
   }
 
-  public unsubscribe(subscriberId: string) {
-    const sub = this.subscribers.get(subscriberId)
+  public unsubscribe(deviceId: string) {
+    const sub = this.subscribers.get(deviceId)
 
     if (!sub) {
       return
     }
 
+    this.subscribers.delete(deviceId)
+
     this.publish({
       type: 'USER_LEFT',
-      subscriberId,
-      deviceId: sub.deviceId
+      devideId: sub.deviceId
     })
   }
 }
