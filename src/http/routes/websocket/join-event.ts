@@ -66,8 +66,16 @@ export async function joinEvent(app: FastifyInstance) {
                 socket.send.bind(socket)(JSON.stringify(message))
             })
             break
+
           case 'LOCATION_UPDATE':
             event.updateSubLocation(deviceId, data.location)
+            break
+
+          case 'DISTANCE':
+            break
+            console.log(data)
+
+          default:
             break
         }
       })
