@@ -35,7 +35,6 @@ export const messageSchemas = {
 
   DISTANCE: z.object({
     type: z.literal('DISTANCE'),
-    from: z.string(),
     to: z.string(),
     distance: z.number()
   }),
