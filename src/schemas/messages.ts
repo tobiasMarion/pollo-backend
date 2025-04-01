@@ -28,8 +28,9 @@ export const messageSchemas = {
   }),
 
   USER_JOINED: z.object({
-    type: z.literal('NEW_SUB'),
-    deviceId: z.string()
+    type: z.literal('USER_JOINED'),
+    deviceId: z.string(),
+    location: locationSchema
   }),
 
   DISTANCE: z.object({

@@ -54,8 +54,9 @@ export class EventService {
 
   public subscribe(subscriber: Subscriber) {
     this.publish({
-      type: 'NEW_SUB',
-      deviceId: subscriber.deviceId
+      type: 'USER_JOINED',
+      deviceId: subscriber.deviceId,
+      location: subscriber.location
     })
 
     this.subscribers.set(subscriber.deviceId, subscriber)
