@@ -42,6 +42,7 @@ export async function joinEvent(app: FastifyInstance) {
         )
 
         if (!result.success) {
+          console.log(rawMessage.toString())
           socket.send(JSON.stringify(result.error))
           socket.close()
           return
@@ -72,10 +73,11 @@ export async function joinEvent(app: FastifyInstance) {
             break
 
           case 'DISTANCE':
-            break
             console.log(data)
+            break
 
           default:
+            console.log(data)
             break
         }
       })
