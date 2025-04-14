@@ -8,3 +8,19 @@ services:
       - POSTGRES_USER=docker 
       - POSTGRES_PASSWORD=docker
       - POSTGRES_DB=pollo
+
+    volumes:
+      - sparkle_pg_data:/bitnami/postgresql
+
+  redis:
+    image: bitnami/redis:latest
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - 'spargle_redis_data:/bitnami/redis/data'
+
+volumes:
+  sparkle_pg_data:
+  spargle_redis_data:

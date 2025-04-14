@@ -36,7 +36,7 @@ export const messageSchemas = {
   DISTANCE: z.object({
     type: z.literal('DISTANCE'),
     to: z.string(),
-    distance: z.number()
+    distance: z.number().nullable()
   }),
 
   USER_LEFT: z.object({

@@ -1,3 +1,5 @@
+import type Redis from 'ioredis'
+
 import type {
   Admin,
   Location,
@@ -6,15 +8,30 @@ import type {
   Subscriber
 } from '@/schemas/messages'
 
-interface EventServiceContructor {
+import { GraphStore } from './graph'
+
+interface EventData {
+  id: string
   adminId: string
 }
 
+interface EventServiceContructor {
+  redis: Redis
+  eventData: EventData
+}
+
 export class EventService {
+  private id: string
   private admin: Admin
   private subscribers = new Map<string, Subscriber>()
+  private eventGraph: GraphStore
 
-  constructor({ adminId }: EventServiceContructor) {
+  constructor({ redis, eventData }: EventServiceContructor) {
+    const { adminId, id } = eventData
+
+    this.eventGraph = new GraphStore(redis, id)
+
+    this.id = id
     this.admin = {
       userId: adminId,
       sendMessage: undefined
@@ -53,13 +70,16 @@ export class EventService {
   }
 
   public subscribe(subscriber: Subscriber) {
+    const { deviceId, location } = subscriber
+
+    this.subscribers.set(deviceId, subscriber)
     this.publish({
       type: 'USER_JOINED',
-      deviceId: subscriber.deviceId,
-      location: subscriber.location
+      deviceId,
+      location
     })
 
-    this.subscribers.set(subscriber.deviceId, subscriber)
+    this.eventGraph.addNode(deviceId)
   }
 
   public updateSubLocation(devideId: string, location: Location) {
@@ -70,6 +90,7 @@ export class EventService {
     }
 
     this.subscribers.set(devideId, { ...sub, location })
+    this.eventGraph.setNodeLocation(devideId, location)
   }
 
   public unsubscribe(deviceId: string) {
@@ -80,6 +101,7 @@ export class EventService {
     }
 
     this.subscribers.delete(deviceId)
+    this.eventGraph.removeNode(deviceId)
 
     this.publish({
       type: 'USER_LEFT',

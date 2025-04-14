@@ -73,18 +73,18 @@ export async function joinEvent(app: FastifyInstance) {
             break
 
           case 'DISTANCE':
-            console.log(data)
+            // event.setGraphEdge(deviceId, data.to, data.distance)
             break
 
-          default:
+          case 'AUTHENTICATION':
+          case 'USER_JOINED':
+          case 'USER_LEFT':
             console.log(data)
             break
         }
       })
 
-      socket.on('close', () => {
-        event.unsubscribe(deviceId)
-      })
+      socket.on('close', () => event.unsubscribe(deviceId))
     }
   )
 }
