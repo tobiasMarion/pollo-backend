@@ -8,7 +8,7 @@ import type {
   Subscriber
 } from '@/schemas/messages'
 
-import { GraphStore } from './graph'
+import { GraphStore } from '../graph/store'
 
 interface EventData {
   id: string
@@ -88,7 +88,7 @@ export class EventService {
       return
     }
 
-    this.eventGraph.setEdge(from, to, value)
+    this.eventGraph.setEdge({ from, to, value })
   }
 
   public updateSubLocation(devideId: string, location: Location) {
