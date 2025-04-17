@@ -2,6 +2,14 @@ import type Redis from 'ioredis'
 
 import type { Location } from '@/schemas/messages'
 
+/* 
+This class store Graphs on a Redis instance.
+A Graph is defined by 1 set and 2 Hashes:
+  1. Nodes: A set of nodes
+  2. Edges: An hash which the name is the starting node, the key is ending node and the value is the weight (distance in this particular case)
+  3. NodesLocation: An hash that store the cylinder which each node can move freely inside
+*/
+
 export class GraphStore {
   private redis: Redis
   private graphId: string

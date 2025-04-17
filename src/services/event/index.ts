@@ -72,14 +72,23 @@ export class EventService {
   public subscribe(subscriber: Subscriber) {
     const { deviceId, location } = subscriber
 
-    this.subscribers.set(deviceId, subscriber)
     this.publish({
       type: 'USER_JOINED',
       deviceId,
       location
     })
 
+    this.subscribers.set(deviceId, subscriber)
     this.eventGraph.addNode(deviceId)
+  }
+
+  public setDistanceToDevice(from: string, to: string, value: number | null) {
+    if (!value) {
+      this.eventGraph.removeEdge(from, to)
+      return
+    }
+
+    this.eventGraph.setEdge(from, to, value)
   }
 
   public updateSubLocation(devideId: string, location: Location) {

@@ -73,7 +73,7 @@ export async function joinEvent(app: FastifyInstance) {
             break
 
           case 'DISTANCE':
-            // event.setGraphEdge(deviceId, data.to, data.distance)
+            event.setDistanceToDevice(deviceId, data.to, data.distance)
             break
 
           case 'AUTHENTICATION':
