@@ -62,8 +62,6 @@ export class EventService {
   public publish(message: Message) {
     this.notifyAdmin(message)
 
-    console.log(message)
-
     this.subscribers.forEach(sub => {
       sub.sendMessage(message)
     })
@@ -82,13 +80,18 @@ export class EventService {
     this.eventGraph.addNode(deviceId)
   }
 
-  public setDistanceToDevice(from: string, to: string, value: number | null) {
+  public async setDistanceToDevice(
+    from: string,
+    to: string,
+    value: number | null
+  ) {
     if (!value) {
       this.eventGraph.removeEdge(from, to)
       return
     }
 
-    this.eventGraph.setEdge({ from, to, value })
+    await this.eventGraph.setEdge({ from, to, value })
+    console.log((await this.eventGraph.listEdges()).length)
   }
 
   public updateSubLocation(devideId: string, location: Location) {
