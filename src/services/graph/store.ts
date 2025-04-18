@@ -2,7 +2,7 @@ import type Redis from 'ioredis'
 
 import type { Location } from '@/schemas/messages'
 
-import type { Edge, Node } from './types'
+import type { Edge, Node, NodeLocationsMap } from './types'
 
 /* 
 This class store Graphs on a Redis instance.
@@ -13,9 +13,9 @@ A Graph is defined by 1 set and 2 Hashes:
 */
 export class GraphStore {
   private redis: Redis
-  private graphId: string
+  private graphId: Node
 
-  constructor(redisInstance: Redis, graphId: string) {
+  constructor(redisInstance: Redis, graphId: Node) {
     this.redis = redisInstance
     this.graphId = graphId
   }
@@ -52,7 +52,7 @@ export class GraphStore {
     await this.redis.hset(this.keyForNode(from), to, value)
   }
 
-  async removeEdge(from: string, to: string) {
+  async removeEdge(from: Node, to: Node) {
     await this.redis.hdel(this.keyForNode(from), to)
   }
 
@@ -60,7 +60,7 @@ export class GraphStore {
     return await this.redis.smembers(this.keyForNodesSet())
   }
 
-  async removeNode(node: string) {
+  async removeNode(node: Node) {
     const nodeKey = this.keyForNode(node)
     const allNodes = await this.listNodes()
 
@@ -111,7 +111,7 @@ export class GraphStore {
       if (error) continue
 
       const from = nodes[i]
-      const neighbors = rawNeighbors as Record<string, string>
+      const neighbors = rawNeighbors as Record<Node, Node>
 
       for (const to in neighbors) {
         const value = parseFloat(neighbors[to])
@@ -120,5 +120,16 @@ export class GraphStore {
     }
 
     return edges
+  }
+
+  async listNodeLocations(): Promise<NodeLocationsMap> {
+    const rawLocations = await this.redis.hgetall(this.keyForNodesLocation())
+
+    return Object.fromEntries(
+      Object.entries(rawLocations).map(([key, value]) => [
+        key,
+        JSON.parse(value)
+      ])
+    )
   }
 }

@@ -1,14 +1,11 @@
 import type { Location } from '@/schemas/messages'
 import { displacementOnEarth } from '@/utils/displacement-on-earth'
 import { minMax } from '@/utils/min-max'
-
-import type { Vector3 } from './types'
+import { add, type Vector3 } from '@/utils/vectors'
 
 // Represents a point that can move freely inside a cilinder, but not get out of it
 export class ConfinedParticle {
-  private x: number
-  private y: number
-  private z: number
+  private position: Vector3
 
   private baseX: number
   private baseY: number
@@ -17,8 +14,10 @@ export class ConfinedParticle {
   private maxZ: number
   private minZ: number
 
+  private forces: Vector3 = { x: 0, y: 0, z: 0 }
+
   constructor(pointLocation: Location, baseLocation: Location) {
-    this.z = pointLocation.altitude
+    const z = pointLocation.altitude
     this.minZ = pointLocation.altitude - pointLocation.verticalAccuracy
     this.maxZ = pointLocation.altitude + pointLocation.verticalAccuracy
 
@@ -27,13 +26,19 @@ export class ConfinedParticle {
       baseLocation
     )
 
-    this.x = deltaEast
+    const x = deltaEast
     this.baseX = deltaEast
 
-    this.y = deltaNorth
+    const y = deltaNorth
     this.baseY = deltaNorth
 
+    this.position = { x, y, z }
+
     this.radius = pointLocation.horizontalAccuracy
+  }
+
+  public getPosition(): Vector3 {
+    return this.position
   }
 
   public moveTo({ x, y, z }: Vector3) {
@@ -50,15 +55,25 @@ export class ConfinedParticle {
       clampedY = y * scale
     }
 
-    this.x = clampedX
-    this.y = clampedY
-    this.z = clampedZ
+    this.position = {
+      x: clampedX,
+      y: clampedY,
+      z: clampedZ
+    }
   }
 
-  public moveBy({ x, y, z }: Vector3) {
-    const newX = this.x + x
-    const newY = this.y + y
-    const newZ = this.z + z
-    this.moveTo({ x: newX, y: newY, z: newZ })
+  public moveBy(vector: Vector3) {
+    const newPosition = add(this.position, vector)
+    this.moveTo(newPosition)
+  }
+
+  public applyForce(vector: Vector3) {
+    this.forces = add(this.forces, vector)
+  }
+
+  public computeAccumulatedForce() {
+    this.moveBy(this.forces)
+
+    this.forces = { x: 0, y: 0, z: 0 }
   }
 }

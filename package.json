@@ -5,6 +5,8 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
+    "build": "tsup src/server.ts --format esm --dts --out-dir dist",
+    "start": "node dist/server.mjs",
     "lint:fix": "eslint --fix",
     "populate-event": "npx tsx --env-file=.env ./src/tests/populate-event.ts"
   },
