@@ -8,6 +8,7 @@ import type {
   Subscriber
 } from '@/schemas/messages'
 
+import { SimulationScheduler } from '../graph/draw/simulation-scheduler'
 import { GraphStore } from '../graph/store'
 
 interface EventData {
@@ -24,12 +25,19 @@ export class EventService {
   private id: string
   private admin: Admin
   private subscribers = new Map<string, Subscriber>()
+
   private eventGraph: GraphStore
+  private simulationScheduler: SimulationScheduler
 
   constructor({ redis, eventData }: EventServiceContructor) {
     const { adminId, id } = eventData
 
     this.eventGraph = new GraphStore(redis, id)
+    this.simulationScheduler = new SimulationScheduler({
+      run: async () => console.log('Rodando'),
+      debounceMs: 500,
+      maxWaitMs: 3000
+    })
 
     this.id = id
     this.admin = {
@@ -67,6 +75,10 @@ export class EventService {
     })
   }
 
+  private onGraphChanged() {
+    this.simulationScheduler.notifyUpdate()
+  }
+
   public subscribe(subscriber: Subscriber) {
     const { deviceId, location } = subscriber
 
@@ -78,20 +90,17 @@ export class EventService {
 
     this.subscribers.set(deviceId, subscriber)
     this.eventGraph.addNode(deviceId)
+    this.onGraphChanged()
   }
 
-  public async setDistanceToDevice(
-    from: string,
-    to: string,
-    value: number | null
-  ) {
+  public setDistanceToDevice(from: string, to: string, value: number | null) {
     if (!value) {
       this.eventGraph.removeEdge(from, to)
-      return
+    } else {
+      this.eventGraph.setEdge({ from, to, value })
     }
 
-    await this.eventGraph.setEdge({ from, to, value })
-    console.log((await this.eventGraph.listEdges()).length)
+    this.onGraphChanged()
   }
 
   public updateSubLocation(devideId: string, location: Location) {
@@ -103,6 +112,7 @@ export class EventService {
 
     this.subscribers.set(devideId, { ...sub, location })
     this.eventGraph.setNodeLocation(devideId, location)
+    this.onGraphChanged()
   }
 
   public unsubscribe(deviceId: string) {
@@ -119,5 +129,7 @@ export class EventService {
       type: 'USER_LEFT',
       devideId: sub.deviceId
     })
+
+    this.onGraphChanged()
   }
 }
