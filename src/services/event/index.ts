@@ -1,18 +1,20 @@
 import type Redis from 'ioredis'
 
+import type { ExactLocation, Location } from '@/schemas/location'
 import type {
   Admin,
-  Location,
   Message,
   SendMessage,
   Subscriber
-} from '@/schemas/messages'
+} from '@/schemas/messages.js'
 
+import { draw3dGraph } from '../graph/draw'
 import { SimulationScheduler } from '../graph/draw/simulation-scheduler'
 import { GraphStore } from '../graph/store'
 
 interface EventData {
   id: string
+  location: ExactLocation
   adminId: string
 }
 
@@ -23,6 +25,7 @@ interface EventServiceContructor {
 
 export class EventService {
   private id: string
+  private location: ExactLocation
   private admin: Admin
   private subscribers = new Map<string, Subscriber>()
 
@@ -30,16 +33,17 @@ export class EventService {
   private simulationScheduler: SimulationScheduler
 
   constructor({ redis, eventData }: EventServiceContructor) {
-    const { adminId, id } = eventData
+    const { id, location, adminId } = eventData
 
     this.eventGraph = new GraphStore(redis, id)
     this.simulationScheduler = new SimulationScheduler({
-      run: async () => console.log('Rodando'),
+      run: this.runSimulation.bind(this),
       debounceMs: 500,
       maxWaitMs: 3000
     })
 
     this.id = id
+    this.location = location
     this.admin = {
       userId: adminId,
       sendMessage: undefined
@@ -90,6 +94,7 @@ export class EventService {
 
     this.subscribers.set(deviceId, subscriber)
     this.eventGraph.addNode(deviceId)
+    this.eventGraph.setNodeLocation(deviceId, location)
     this.onGraphChanged()
   }
 
@@ -131,5 +136,15 @@ export class EventService {
     })
 
     this.onGraphChanged()
+  }
+
+  private async runSimulation() {
+    const [nodes, edges, nodeLocations] = await Promise.all([
+      this.eventGraph.listNodes(),
+      this.eventGraph.listEdges(),
+      this.eventGraph.listNodeLocations()
+    ])
+
+    console.log(draw3dGraph({ nodes, edges }, nodeLocations, this.location))
   }
 }

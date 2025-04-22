@@ -1,14 +1,6 @@
 import { z } from 'zod'
 
-const locationSchema = z.object({
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-90).max(90),
-  horizontalAccuracy: z.number(),
-  altitude: z.number(),
-  verticalAccuracy: z.number()
-})
-
-export type Location = z.infer<typeof locationSchema>
+import { type Location, locationSchema } from './location'
 
 export const messageSchemas = {
   AUTH: z.object({

@@ -1,4 +1,4 @@
-import type { Location } from '@/schemas/messages'
+import type { ExactLocation, Location } from '@/schemas/location'
 import { displacementOnEarth } from '@/utils/displacement-on-earth'
 import { minMax } from '@/utils/min-max'
 import { add, type Vector3 } from '@/utils/vectors'
@@ -16,7 +16,7 @@ export class ConfinedParticle {
 
   private forces: Vector3 = { x: 0, y: 0, z: 0 }
 
-  constructor(pointLocation: Location, baseLocation: Location) {
+  constructor(pointLocation: Location, baseLocation: ExactLocation) {
     const z = pointLocation.altitude
     this.minZ = pointLocation.altitude - pointLocation.verticalAccuracy
     this.maxZ = pointLocation.altitude + pointLocation.verticalAccuracy

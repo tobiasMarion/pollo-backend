@@ -1,6 +1,6 @@
 import type Redis from 'ioredis'
 
-import type { Location } from '@/schemas/messages'
+import type { Location } from '@/schemas/location'
 
 import type { Edge, Node, NodeLocationsMap } from './types'
 

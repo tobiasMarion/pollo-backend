@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client'
 import type Redis from 'ioredis'
 
 import type { CreateEvent } from '@/schemas/event'
+import { exactLocationSchema } from '@/schemas/location'
 import { EventService } from '@/services/event'
 
 import { prisma } from './prisma'
@@ -19,10 +20,11 @@ function loadOpenEvents(prisma: PrismaClient) {
   prisma.event
     .findMany({ where: { OR: [{ status: 'OPEN' }] } })
     .then(openEvents => {
-      openEvents.forEach(({ id, userId }) => {
+      openEvents.forEach(({ id, latitude, longitude, userId }) => {
+        const location = exactLocationSchema.parse({ latitude, longitude })
         const event = new EventService({
           redis,
-          eventData: { id, adminId: userId }
+          eventData: { id, location, adminId: userId }
         })
         map.set(id, event)
       })
@@ -43,7 +45,16 @@ export async function createNewEvent(
     data: { name, latitude, longitude, type, userId: adminId }
   })
 
-  const event = new EventService({ eventData: { id, adminId }, redis })
+  const location = exactLocationSchema.parse({ latitude, longitude })
+
+  const event = new EventService({
+    eventData: {
+      id,
+      adminId,
+      location
+    },
+    redis
+  })
 
   eventsMap.set(id, event)
 

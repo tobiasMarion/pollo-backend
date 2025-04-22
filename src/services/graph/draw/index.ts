@@ -1,4 +1,4 @@
-import type { Location } from '@/schemas/messages'
+import type { ExactLocation } from '@/schemas/location'
 import { minMax } from '@/utils/min-max'
 import { lengthSquared, scale, subtract } from '@/utils/vectors'
 
@@ -53,7 +53,7 @@ function applyEdgeAttractionForce(
 export function draw3dGraph(
   { nodes, edges }: Graph,
   nodeLocations: NodeLocationsMap,
-  baseLocation: Location,
+  baseLocation: ExactLocation,
   iterations: number = 1000
 ) {
   const amountOfNodes = nodes.length
@@ -89,4 +89,6 @@ export function draw3dGraph(
       particle.computeAccumulatedForce()
     }
   }
+
+  return particles
 }
