@@ -145,6 +145,6 @@ export class EventService {
       this.eventGraph.listNodeLocations()
     ])
 
-    console.log(draw3dGraph({ nodes, edges }, nodeLocations, this.location))
+    draw3dGraph({ nodes, edges }, nodeLocations, this.location)
   }
 }

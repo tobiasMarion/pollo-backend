@@ -77,17 +77,18 @@ export function draw3dGraph(
     }
 
     edges.forEach(({ from, to, value }) => {
-      const p1 = particles[from]
-      const p2 = particles[to]
-
-      applyEdgeAttractionForce(p1, p2, value)
+      applyEdgeAttractionForce(particles[from], particles[to], value)
     })
+
+    let totalResultantForce = 0
 
     for (const node in particles) {
       const particle = particles[node]
 
-      particle.computeAccumulatedForce()
+      totalResultantForce += particle.computeAccumulatedForce()
     }
+
+    if (totalResultantForce === 0) return particles
   }
 
   return particles

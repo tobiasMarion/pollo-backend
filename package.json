@@ -8,7 +8,7 @@
     "build": "tsup src/server.ts --format esm --dts --out-dir dist",
     "start": "node dist/server.mjs",
     "lint:fix": "eslint --fix",
-    "populate-event": "npx tsx --env-file=.env ./src/tests/populate-event.ts"
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
@@ -39,7 +39,8 @@
     "prisma": "^6.3.0",
     "tsup": "^8.3.5",
     "tsx": "^4.7.3",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^3.1.2"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

@@ -1,20 +1,21 @@
 import type { ExactLocation, Location } from '@/schemas/location'
 import { displacementOnEarth } from '@/utils/displacement-on-earth'
 import { minMax } from '@/utils/min-max'
-import { add, type Vector3 } from '@/utils/vectors'
+import { add, lengthSquared, type Vector3, vectorNull } from '@/utils/vectors'
 
-// Represents a point that can move freely inside a cilinder, but not get out of it
+// Represents a point that can move freely inside a cylinder, but not get out of it
 export class ConfinedParticle {
   private position: Vector3
 
-  private baseX: number
-  private baseY: number
+  // Center coordinates of the cylinder base
+  private centerX: number
+  private centerY: number
   private radius: number
 
   private maxZ: number
   private minZ: number
 
-  private forces: Vector3 = { x: 0, y: 0, z: 0 }
+  private forces: Vector3 = vectorNull()
 
   constructor(pointLocation: Location, baseLocation: ExactLocation) {
     const z = pointLocation.altitude
@@ -26,13 +27,16 @@ export class ConfinedParticle {
       baseLocation
     )
 
-    const x = deltaEast
-    this.baseX = deltaEast
+    // Store the center of the cylinder
+    this.centerX = deltaEast
+    this.centerY = deltaNorth
 
-    const y = deltaNorth
-    this.baseY = deltaNorth
-
-    this.position = { x, y, z }
+    // Initial position is at the center of the cylinder at the given altitude
+    this.position = {
+      x: deltaEast,
+      y: deltaNorth,
+      z
+    }
 
     this.radius = pointLocation.horizontalAccuracy
   }
@@ -44,15 +48,20 @@ export class ConfinedParticle {
   public moveTo({ x, y, z }: Vector3) {
     const clampedZ = minMax(z, this.minZ, this.maxZ)
 
+    // Calculate distance from center of the cylinder
+    const dx = x - this.centerX
+    const dy = y - this.centerY
+    const distanceFromCenter = Math.sqrt(dx * dx + dy * dy)
+
     let clampedX = x
     let clampedY = y
 
-    const distanceFromCenter = Math.sqrt(x * x + y * y)
-
+    // If outside the cylinder radius, scale the position to the boundary
     if (distanceFromCenter > this.radius) {
       const scale = this.radius / distanceFromCenter
-      clampedX = x * scale
-      clampedY = y * scale
+      // Apply scaling relative to center
+      clampedX = this.centerX + dx * scale
+      clampedY = this.centerY + dy * scale
     }
 
     this.position = {
@@ -71,9 +80,15 @@ export class ConfinedParticle {
     this.forces = add(this.forces, vector)
   }
 
-  public computeAccumulatedForce() {
+  public computeAccumulatedForce(): number {
+    const forceMagnitude = Math.sqrt(lengthSquared(this.forces))
+
+    // Apply the accumulated forces
     this.moveBy(this.forces)
 
-    this.forces = { x: 0, y: 0, z: 0 }
+    // Reset forces after applying them
+    this.forces = vectorNull()
+
+    return forceMagnitude
   }
 }
