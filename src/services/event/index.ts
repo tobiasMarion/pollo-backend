@@ -8,7 +8,6 @@ import type {
   Subscriber
 } from '@/schemas/messages.js'
 
-import { draw3dGraph } from '../graph/draw'
 import { SimulationScheduler } from '../graph/draw/simulation-scheduler'
 import { GraphStore } from '../graph/store'
 
@@ -139,12 +138,6 @@ export class EventService {
   }
 
   private async runSimulation() {
-    const [nodes, edges, nodeLocations] = await Promise.all([
-      this.eventGraph.listNodes(),
-      this.eventGraph.listEdges(),
-      this.eventGraph.listNodeLocations()
-    ])
-
-    draw3dGraph({ nodes, edges }, nodeLocations, this.location)
+    console.log('Should run the simulation')
   }
 }

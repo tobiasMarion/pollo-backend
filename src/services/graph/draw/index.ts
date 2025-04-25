@@ -1,95 +1,47 @@
-import type { ExactLocation } from '@/schemas/location'
-import { minMax } from '@/utils/min-max'
-import { lengthSquared, scale, subtract } from '@/utils/vectors'
+import { lengthSquared, normalize, scale, subtract } from '@/utils/vectors'
 
-import type { Graph, Node, NodeLocationsMap } from '../types'
+import type { Graph, NodeParticles } from '../types'
 import { ConfinedParticle } from './confined-particle'
 
-function applyRepulsionForce(
+const ALMOST_ZERO = 1e-3 // Used to avoid division by 0
+
+function applyEdgeElasticForce(
   p1: ConfinedParticle,
   p2: ConfinedParticle,
-  k = 0.1, // Ideal distance between particles
-  maxForce = 1.0, // Used to soft the simmulation
-  epsilon = 1e-4 // Used to avoid division by 0
+  restLength: number,
+  springConstant: number = 1
 ) {
-  const direction = subtract(p1.getPosition(), p2.getPosition())
-  const distSq = lengthSquared(direction) + epsilon
-  const dist = Math.sqrt(distSq)
+  const directionVector = subtract(p1.getPosition(), p2.getPosition())
+  const distanceSquared = lengthSquared(directionVector) + ALMOST_ZERO
 
-  let forceMagnitude = (k * k) / distSq
-  forceMagnitude = Math.min(forceMagnitude, maxForce)
+  const distance = Math.sqrt(distanceSquared)
+  const directionUnit = normalize(directionVector)
 
-  const forceDir = scale(direction, 1 / dist)
-  const force = scale(forceDir, forceMagnitude)
+  const displacement = distance - restLength
+  const forceMagnitude = springConstant * displacement
+  const elasticForce = scale(directionUnit, forceMagnitude)
 
-  p1.applyForce(force)
-  p2.applyForce(scale(force, -1))
-}
-
-function applyEdgeAttractionForce(
-  p1: ConfinedParticle,
-  p2: ConfinedParticle,
-  idealDistance: number,
-  stiffness = 0.5,
-  maxForce = 10,
-  epsilon = 1e-4
-) {
-  const direction = subtract(p2.getPosition(), p1.getPosition())
-  const distSq = lengthSquared(direction) + epsilon
-  const dist = Math.sqrt(distSq)
-  if (dist === 0) return
-
-  // Linear spring: F = –stiffness * (dist – idealDistance)
-  const raw = (dist - idealDistance) * stiffness
-  const fmag = minMax(raw, -maxForce, maxForce)
-
-  const fdir = scale(direction, 1 / dist)
-  const force = scale(fdir, fmag)
-
-  // Since the graph is made of pairs of edges, each on will only affect only the first node
-  p1.applyForce(force)
+  // A força puxa particleA em direção a B e vice-versa
+  p1.applyForce(elasticForce)
+  p2.applyForce(scale(elasticForce, -1))
 }
 
 export function draw3dGraph(
-  { nodes, edges }: Graph,
-  nodeLocations: NodeLocationsMap,
-  baseLocation: ExactLocation,
-  iterations: number = 1000
+  { edges }: Graph,
+  particles: NodeParticles,
+  interactions: number = 1000
 ) {
-  const amountOfNodes = nodes.length
-  const particles: Record<Node, ConfinedParticle> = {}
+  for (let index = 0; index < interactions; index++) {
+    edges.forEach(({ from, to, value }) =>
+      applyEdgeElasticForce(particles[from], particles[to], value)
+    )
 
-  nodes.forEach(node => {
-    particles[node] = new ConfinedParticle(nodeLocations[node], baseLocation)
-  })
+    let totalMomentum = 0
 
-  for (let iteration = 0; iteration < iterations; iteration++) {
-    for (let i = 0; i < amountOfNodes - 1; i++) {
-      const nodeI = nodes[i]
-      const p1 = particles[nodeI]
-
-      for (let j = i + 1; j < amountOfNodes; j++) {
-        const nodeJ = nodes[j]
-        const p2 = particles[nodeJ]
-
-        applyRepulsionForce(p1, p2)
-      }
+    for (const particle of Object.values(particles)) {
+      totalMomentum += particle.computeAccumulatedForce()
     }
 
-    edges.forEach(({ from, to, value }) => {
-      applyEdgeAttractionForce(particles[from], particles[to], value)
-    })
-
-    let totalResultantForce = 0
-
-    for (const node in particles) {
-      const particle = particles[node]
-
-      totalResultantForce += particle.computeAccumulatedForce()
-    }
-
-    if (totalResultantForce === 0) return particles
+    if (totalMomentum === 0) return
   }
-
-  return particles
 }

@@ -2,7 +2,7 @@ import type Redis from 'ioredis'
 
 import type { Location } from '@/schemas/location'
 
-import type { Edge, Node, NodeLocationsMap } from './types'
+import type { Edge, Node } from './types'
 
 /* 
 This class store Graphs on a Redis instance.
@@ -120,16 +120,5 @@ export class GraphStore {
     }
 
     return edges
-  }
-
-  async listNodeLocations(): Promise<NodeLocationsMap> {
-    const rawLocations = await this.redis.hgetall(this.keyForNodesLocation())
-
-    return Object.fromEntries(
-      Object.entries(rawLocations).map(([key, value]) => [
-        key,
-        JSON.parse(value)
-      ])
-    )
   }
 }

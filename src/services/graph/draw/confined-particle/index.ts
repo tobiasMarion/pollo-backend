@@ -1,7 +1,11 @@
-import type { ExactLocation, Location } from '@/schemas/location'
-import { displacementOnEarth } from '@/utils/displacement-on-earth'
 import { minMax } from '@/utils/min-max'
 import { add, lengthSquared, type Vector3, vectorNull } from '@/utils/vectors'
+
+export interface ConfinedParticleProps {
+  position: Vector3
+  radius: number
+  deltaZ: number
+}
 
 // Represents a point that can move freely inside a cylinder, but not get out of it
 export class ConfinedParticle {
@@ -17,28 +21,13 @@ export class ConfinedParticle {
 
   private forces: Vector3 = vectorNull()
 
-  constructor(pointLocation: Location, baseLocation: ExactLocation) {
-    const z = pointLocation.altitude
-    this.minZ = pointLocation.altitude - pointLocation.verticalAccuracy
-    this.maxZ = pointLocation.altitude + pointLocation.verticalAccuracy
-
-    const { deltaEast, deltaNorth } = displacementOnEarth(
-      pointLocation,
-      baseLocation
-    )
-
-    // Store the center of the cylinder
-    this.centerX = deltaEast
-    this.centerY = deltaNorth
-
-    // Initial position is at the center of the cylinder at the given altitude
-    this.position = {
-      x: deltaEast,
-      y: deltaNorth,
-      z
-    }
-
-    this.radius = pointLocation.horizontalAccuracy
+  constructor({ position, radius, deltaZ }: ConfinedParticleProps) {
+    this.position = position
+    this.centerX = position.x
+    this.centerY = position.y
+    this.radius = radius
+    this.maxZ = position.z + deltaZ
+    this.minZ = position.z - deltaZ
   }
 
   public getPosition(): Vector3 {

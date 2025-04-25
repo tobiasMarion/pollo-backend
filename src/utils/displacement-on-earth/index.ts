@@ -1,7 +1,7 @@
-import type { Location } from '@/schemas/messages'
+import type { Location } from '@/schemas/location'
 
-const EARTHS_RADIUS = 6371000 // Meters
-const toRadians = (deg: number) => (deg * Math.PI) / 180
+export const EARTHS_RADIUS = 6371000 // Meters
+export const toRadians = (deg: number) => (deg * Math.PI) / 180
 
 export function displacementOnEarth(
   pointLocation: Location,
