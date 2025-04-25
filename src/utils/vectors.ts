@@ -9,6 +9,10 @@ export function lengthSquared(v: Vector3): number {
   return v.x * v.x + v.y * v.y + v.z * v.z
 }
 
+export function distanceBetweenPoints(p1: Vector3, p2: Vector3) {
+  return Math.sqrt(lengthSquared(subtract(p1, p2)))
+}
+
 export function normalize(v: Vector3): Vector3 {
   const len = Math.sqrt(lengthSquared(v))
   if (len === 0) return vectorNull()
@@ -20,9 +24,17 @@ export function scale(v: Vector3, scalar: number): Vector3 {
 }
 
 export function add(a: Vector3, b: Vector3): Vector3 {
-  a.x += b.x
-  a.y += b.y
-  a.z += b.z
+  return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z }
+}
 
-  return a
+export function randomVector(maxLength: number): Vector3 {
+  const direction = normalize({
+    x: Math.random() * 2 - 1,
+    y: Math.random() * 2 - 1,
+    z: Math.random() * 2 - 1
+  })
+
+  const length = Math.random() * maxLength
+
+  return scale(direction, length)
 }

@@ -9,19 +9,22 @@ function applyEdgeElasticForce(
   p1: ConfinedParticle,
   p2: ConfinedParticle,
   restLength: number,
-  springConstant: number = 1
+  springConstant: number = 0.0005
 ) {
-  const directionVector = subtract(p1.getPosition(), p2.getPosition())
+  const directionVector = subtract(p2.getPosition(), p1.getPosition())
   const distanceSquared = lengthSquared(directionVector) + ALMOST_ZERO
 
   const distance = Math.sqrt(distanceSquared)
+
+  if (distance < ALMOST_ZERO) return
+
   const directionUnit = normalize(directionVector)
 
   const displacement = distance - restLength
   const forceMagnitude = springConstant * displacement
+
   const elasticForce = scale(directionUnit, forceMagnitude)
 
-  // A força puxa particleA em direção a B e vice-versa
   p1.applyForce(elasticForce)
   p2.applyForce(scale(elasticForce, -1))
 }
@@ -42,6 +45,8 @@ export function draw3dGraph(
       totalMomentum += particle.computeAccumulatedForce()
     }
 
-    if (totalMomentum === 0) return
+    if (totalMomentum < ALMOST_ZERO) return particles
   }
+
+  return particles
 }
