@@ -34,10 +34,16 @@ export function draw3dGraph(
   particles: NodeParticles,
   interactions: number = 1000
 ) {
+  const start = Date.now()
   for (let index = 0; index < interactions; index++) {
-    edges.forEach(({ from, to, value }) =>
-      applyEdgeElasticForce(particles[from], particles[to], value)
-    )
+    edges.forEach(({ from, to, value }) => {
+      const p1 = particles[from]
+      const p2 = particles[to]
+
+      if (!p1 || !p2) return
+
+      applyEdgeElasticForce(p1, p2, value)
+    })
 
     let totalMomentum = 0
 
@@ -45,8 +51,9 @@ export function draw3dGraph(
       totalMomentum += particle.computeAccumulatedForce()
     }
 
-    if (totalMomentum < ALMOST_ZERO) return particles
+    if (totalMomentum < ALMOST_ZERO) break
   }
 
+  console.log(`Simulation took: ${Date.now() - start} ms`)
   return particles
 }

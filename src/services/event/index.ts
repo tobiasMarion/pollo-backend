@@ -8,6 +8,8 @@ import type {
   Subscriber
 } from '@/schemas/messages.js'
 
+import { draw3dGraph } from '../graph/draw'
+import { createParticleFromLocation } from '../graph/draw/confined-particle/create-particle-from-location'
 import { SimulationScheduler } from '../graph/draw/simulation-scheduler'
 import { GraphStore } from '../graph/store'
 
@@ -131,13 +133,32 @@ export class EventService {
 
     this.publish({
       type: 'USER_LEFT',
-      devideId: sub.deviceId
+      deviceId: sub.deviceId
     })
 
     this.onGraphChanged()
   }
 
   private async runSimulation() {
-    console.log('Should run the simulation')
+    const edges = await this.eventGraph.listEdges()
+    const nodes = []
+    const particles = {}
+
+    for (const [node, sub] of this.subscribers) {
+      nodes.push(node)
+      particles[node] = createParticleFromLocation(sub.location, this.location)
+    }
+
+    const result = draw3dGraph({ nodes, edges }, particles)
+
+    Object.keys(result).forEach(node => {
+      const sub = this.subscribers.get(node)
+      const position = result[node].getPosition()
+      sub.sendMessage({
+        type: 'SET_POINT',
+        absolute: position,
+        relative: null
+      })
+    })
   }
 }
