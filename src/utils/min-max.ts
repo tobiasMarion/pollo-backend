@@ -1,3 +1,6 @@
+/**
+ * Clamps the value between [min, max]
+ */
 export function minMax(value: number, min: number, max: number) {
   if (value < min) return min
   if (value > max) return max
