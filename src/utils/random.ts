@@ -1,5 +1,3 @@
-import type { Vector3 } from './vectors'
-
 export function randIntBetween(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
@@ -33,7 +31,7 @@ export function randomNormal(mean: number, stdDev: number): number {
  * Falls back to clamping after max attempts to avoid infinite loops.
  * @throws if stdDev < 0 or min >= max
  */
-function randomTruncatedNormal(
+export function randomTruncatedNormal(
   mean: number,
   stdDev: number,
   min: number,
@@ -63,56 +61,4 @@ function randomTruncatedNormal(
   } while (value < min || value > max)
 
   return value
-}
-
-/**
- * Returns a Gaussian noise vector (not clamped) based on the provided options.
- * @throws if min >= max
- */
-export function generateCustomGaussianNoise(
-  options: GaussianNoiseOptions
-): Vector3 {
-  const { min, max, center = (min + max) / 2, spreadFraction = 1 / 3 } = options
-  if (min >= max)
-    throw new Error('generateCustomGaussianNoise: min must be < max')
-  if (spreadFraction <= 0 || spreadFraction > 1) {
-    console.warn(
-      'generateCustomGaussianNoise: spreadFraction should be in (0,1], defaulting to 1/3'
-    )
-  }
-
-  const range = max - min
-  const stdDev = range * spreadFraction
-
-  return {
-    x: randomNormal(center, stdDev),
-    y: randomNormal(center, stdDev),
-    z: randomNormal(center, stdDev)
-  }
-}
-
-/**
- * Returns a clamped Gaussian noise vector within [min, max] based on the provided options.
- * @throws if min >= max
- */
-export function generateClampedGaussianNoise(
-  options: GaussianNoiseOptions
-): Vector3 {
-  const { min, max, center = (min + max) / 2, spreadFraction = 1 / 3 } = options
-  if (min >= max)
-    throw new Error('generateClampedGaussianNoise: min must be < max')
-  if (spreadFraction <= 0 || spreadFraction > 1) {
-    console.warn(
-      'generateClampedGaussianNoise: spreadFraction should be in (0,1], defaulting to 1/3'
-    )
-  }
-
-  const range = max - min
-  const stdDev = range * spreadFraction
-
-  return {
-    x: randomTruncatedNormal(center, stdDev, min, max),
-    y: randomTruncatedNormal(center, stdDev, min, max),
-    z: randomTruncatedNormal(center, stdDev, min, max)
-  }
 }

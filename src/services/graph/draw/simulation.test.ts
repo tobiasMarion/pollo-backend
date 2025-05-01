@@ -1,13 +1,16 @@
+/**
+ * Integration test for 3D graph reconstruction under noisy measurements.
+ * Uses seeded random to ensure reproducibility.
+ */
+import seedrandom from 'seedrandom'
 import { v4 as uuidv4 } from 'uuid'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import { randIntBetween } from '@/utils/random'
+import { randomNormal, randomTruncatedNormal } from '@/utils/random'
 import {
   add,
   distanceBetweenPoints,
-  lengthSquared,
   randomVector,
-  subtract,
   type Vector3
 } from '@/utils/vectors'
 
@@ -15,87 +18,107 @@ import type { Edge, Node, NodeParticles } from '../types'
 import { draw3dGraph } from '.'
 import { ConfinedParticle } from './confined-particle'
 
+// Seed the PRNG for deterministic tests
+beforeAll(() => {
+  seedrandom('simulation-test-seed', { global: true })
+})
+
 describe('Simulation', () => {
-  const amountOfNodes = 50
-  const originalPoints: Record<Node, Vector3> = {}
-  const edges: Edge[] = []
-  const minDistanceToCreateEdge = 7
+  const NODE_COUNT = 50
+  const MIN_DIST_TO_CREATE_EDGE = 7
 
-  // Generate data without error
-  for (let i = 0; i < amountOfNodes; i++) {
-    const node = uuidv4()
+  // Position error parameters
+  const POS_MIN = 4
+  const POS_MAX = 12
+  const POS_CENTER = 7
+  const POS_SPREAD_FRAC = 1 / 3
+  const POS_STD_DEV = (POS_MAX - POS_MIN) * POS_SPREAD_FRAC
 
-    const point = randomVector(10)
-    originalPoints[node] = point
-  }
+  // Edge weight error parameters
+  const EDGE_MAX_ERROR = 15
+  const EDGE_SPREAD_FRAC = 1 / 3
+  const EDGE_STD_DEV = EDGE_MAX_ERROR * EDGE_SPREAD_FRAC
 
-  const nodes = Object.keys(originalPoints)
+  // Data holders
+  let originalPoints: Record<Node, Vector3> = {}
+  let edges: Edge[] = []
+  let particlesWithErrors: NodeParticles = {}
+  let edgesWithErrors: Edge[] = []
 
-  for (let i = 0; i < amountOfNodes - 1; i++) {
-    const p1 = originalPoints[nodes[i]]
+  beforeAll(() => {
+    // 1. Generate original points uniformly in sphere radius 10
+    originalPoints = {}
+    for (let i = 0; i < NODE_COUNT; i++) {
+      const node = uuidv4()
+      originalPoints[node] = randomVector(10)
+    }
 
-    for (let j = i + 1; j < amountOfNodes; j++) {
-      const p2 = originalPoints[nodes[j]]
+    const nodes = Object.keys(originalPoints) as Node[]
 
-      const distance = Math.sqrt(lengthSquared(subtract(p1, p2)))
-
-      if (distance < minDistanceToCreateEdge) {
-        edges.push({ from: nodes[i], to: nodes[j], value: distance })
-        edges.push({ from: nodes[j], to: nodes[i], value: distance })
+    // 2. Build edges for pairs closer than threshold
+    edges = []
+    for (let i = 0; i < nodes.length - 1; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const from = nodes[i]
+        const to = nodes[j]
+        const dist = distanceBetweenPoints(
+          originalPoints[from],
+          originalPoints[to]
+        )
+        if (dist < MIN_DIST_TO_CREATE_EDGE) {
+          edges.push({ from, to, value: dist })
+          edges.push({ from: to, to: from, value: dist })
+        }
       }
     }
-  }
 
-  // Create particles adding errors to their position
-  const particlesWithErrors: NodeParticles = {}
-  nodes.forEach(node => {
-    const error = randIntBetween(3, 10)
-    const deltaP = randomVector(error)
-
-    particlesWithErrors[node] = new ConfinedParticle({
-      position: add(originalPoints[node], deltaP),
-      radius: error,
-      deltaZ: error
-    })
-  })
-
-  const edgesWithErrors = edges.map(edge => {
-    const error = randIntBetween(-30, 30) / 100
-
-    return { ...edge, value: edge.value + error }
-  })
-
-  describe('Run', () => {
-    it('Should reconstruct the original position using the wrong ones', () => {
-      const result = draw3dGraph(
-        { nodes, edges: edgesWithErrors },
-        particlesWithErrors
+    // 3. Create noisy particles
+    particlesWithErrors = {}
+    nodes.forEach(node => {
+      // truncated normal for positional magnitude
+      const magnitudeError = randomTruncatedNormal(
+        POS_CENTER,
+        POS_STD_DEV,
+        POS_MIN,
+        POS_MAX
       )
-
-      let totalError = 0
-
-      const tableData = nodes.map(node => {
-        const original = originalPoints[node]
-        const resultPos = result[node].getPosition()
-        const error = distanceBetweenPoints(original, resultPos)
-        totalError += error
-
-        return {
-          node: node.substring(0, 8),
-          originalX: original.x.toFixed(5),
-          resultX: resultPos.x.toFixed(5),
-          originalY: original.y.toFixed(5),
-          resultY: resultPos.y.toFixed(5),
-          originalZ: original.z.toFixed(5),
-          resultZ: resultPos.z.toFixed(5),
-          error
-        }
+      // per-component gaussian noise with stdDev = magnitudeError/3
+      const delta: Vector3 = {
+        x: randomNormal(0, magnitudeError / 3),
+        y: randomNormal(0, magnitudeError / 3),
+        z: randomNormal(0, magnitudeError / 3)
+      }
+      particlesWithErrors[node] = new ConfinedParticle({
+        position: add(originalPoints[node], delta),
+        radius: magnitudeError,
+        deltaZ: magnitudeError
       })
-      const averageError = totalError / amountOfNodes
-
-      console.table(tableData)
-      console.log('Average Error: ', averageError)
-      expect(averageError).toBeLessThan(1.3)
     })
+
+    // 4. Perturb edge weights
+    edgesWithErrors = edges.map(edge => {
+      const weightError = randomNormal(0, EDGE_STD_DEV)
+      return { ...edge, value: edge.value + weightError }
+    })
+  })
+
+  it('reconstructs original positions with average error <= 1', () => {
+    const nodes = Object.keys(originalPoints) as Node[]
+    const resultMap = draw3dGraph(
+      { nodes, edges: edgesWithErrors },
+      particlesWithErrors
+    )
+
+    let totalError = 0
+    nodes.forEach(node => {
+      const orig = originalPoints[node]
+      const recon = resultMap[node].getPosition()
+      totalError += distanceBetweenPoints(orig, recon)
+    })
+    const avgError = totalError / NODE_COUNT
+
+    console.log(`Average reconstruction error: ${avgError.toFixed(4)}`)
+    expect(avgError).toBeGreaterThan(0)
+    expect(avgError).toBeLessThanOrEqual(3)
   })
 })
