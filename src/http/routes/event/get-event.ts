@@ -23,7 +23,7 @@ export async function getEventById(app: FastifyInstance) {
               name: z.string(),
               status: z.enum(['OPEN', 'CLOSED', 'FINISHED']),
               latitude: z.number().min(-90).max(90),
-              longitude: z.number().min(-90).max(90),
+              longitude: z.number().min(-180).max(180),
               userId: z.string(),
               createdAt: z.date(),
               updatedAt: z.date()

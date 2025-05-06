@@ -24,7 +24,7 @@ beforeAll(() => {
 })
 
 describe('Simulation', () => {
-  const NODE_COUNT = 50
+  const NODE_COUNT = 100
   const MIN_DIST_TO_CREATE_EDGE = 7
 
   // Position error parameters
@@ -100,6 +100,15 @@ describe('Simulation', () => {
       const weightError = randomNormal(0, EDGE_STD_DEV)
       return { ...edge, value: edge.value + weightError }
     })
+
+    let totalError = 0
+    nodes.forEach(node => {
+      const withoutError = originalPoints[node]
+      const withError = particlesWithErrors[node]
+
+      totalError += distanceBetweenPoints(withError.getPosition(), withoutError)
+    })
+    console.log('Average error added:', totalError / nodes.length)
   })
 
   it('reconstructs original positions with average error <= 1', () => {
