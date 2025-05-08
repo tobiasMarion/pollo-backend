@@ -10,8 +10,10 @@ import type {
 
 import { draw3dGraph } from '../graph/draw'
 import { createParticleFromLocation } from '../graph/draw/confined-particle/create-particle-from-location'
+import { quantizeAndRankParticles } from '../graph/draw/quatizes'
 import { SimulationScheduler } from '../graph/draw/simulation-scheduler'
 import { GraphStore } from '../graph/store'
+import type { NodeParticles } from '../graph/types'
 
 interface EventData {
   id: string
@@ -109,15 +111,16 @@ export class EventService {
     this.onGraphChanged()
   }
 
-  public updateSubLocation(devideId: string, location: Location) {
-    const sub = this.subscribers.get(devideId)
+  public updateSubLocation(deviceId: string, location: Location) {
+    const sub = this.subscribers.get(deviceId)
 
     if (!sub) {
       return
     }
 
-    this.subscribers.set(devideId, { ...sub, location })
-    this.eventGraph.setNodeLocation(devideId, location)
+    this.subscribers.set(deviceId, { ...sub, location })
+    this.notifyAdmin({ type: 'LOCATION_UPDATE_REPORT', deviceId, location })
+    this.eventGraph.setNodeLocation(deviceId, location)
     this.onGraphChanged()
   }
 
@@ -142,23 +145,28 @@ export class EventService {
   private async runSimulation() {
     const edges = await this.eventGraph.listEdges()
     const nodes = []
-    const particles = {}
+    const particles: NodeParticles = {}
 
     for (const [node, sub] of this.subscribers) {
       nodes.push(node)
       particles[node] = createParticleFromLocation(sub.location, this.location)
     }
 
-    const result = draw3dGraph({ nodes, edges }, particles)
+    const simulationResult = draw3dGraph({ nodes, edges }, particles)
+    const positions = quantizeAndRankParticles(simulationResult)
 
-    Object.keys(result).forEach(node => {
-      const sub = this.subscribers.get(node)
-      const position = result[node].getPosition()
+    for (const [particle, position] of Object.entries(positions)) {
+      const sub = this.subscribers.get(particle)
+
+      if (!sub) continue
+
+      const { absolute, relative } = position
+
       sub.sendMessage({
         type: 'SET_POINT',
-        absolute: position,
-        relative: null
+        absolute,
+        relative
       })
-    })
+    }
   }
 }

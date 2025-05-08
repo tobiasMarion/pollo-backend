@@ -62,7 +62,8 @@ export async function joinEvent(app: FastifyInstance) {
           case 'JOIN':
             deviceId = data.deviceId
             event.subscribe({
-              ...data,
+              deviceId,
+              location: data.location,
               sendMessage: (message: Message) =>
                 socket.send.bind(socket)(JSON.stringify(message))
             })

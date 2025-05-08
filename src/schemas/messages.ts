@@ -19,6 +19,12 @@ export const messageSchemas = {
     location: locationSchema
   }),
 
+  LOCATION_UPDATE_REPORT: z.object({
+    type: z.literal('LOCATION_UPDATE_REPORT'),
+    deviceId: z.string(),
+    location: locationSchema
+  }),
+
   USER_JOINED: z.object({
     type: z.literal('USER_JOINED'),
     deviceId: z.string(),
@@ -39,13 +45,11 @@ export const messageSchemas = {
   SET_POINT: z.object({
     type: z.literal('SET_POINT'),
     absolute: z.object({ x: z.number(), y: z.number(), z: z.number() }),
-    relative: z
-      .object({
-        x: z.number().int().nonnegative(),
-        y: z.number().int().nonnegative(),
-        z: z.number().int().nonnegative()
-      })
-      .nullable()
+    relative: z.object({
+      x: z.number().nonnegative(),
+      y: z.number().nonnegative(),
+      z: z.number().nonnegative()
+    })
   })
 } as const
 
@@ -53,9 +57,10 @@ export const messageSchema = z.discriminatedUnion('type', [
   messageSchemas.AUTH,
   messageSchemas.JOIN,
   messageSchemas.LOCATION_UPDATE,
+  messageSchemas.LOCATION_UPDATE_REPORT,
   messageSchemas.USER_JOINED,
-  messageSchemas.DISTANCE,
   messageSchemas.USER_LEFT,
+  messageSchemas.DISTANCE,
   messageSchemas.SET_POINT
 ])
 
@@ -82,22 +87,20 @@ export type Admin = {
 export function safeParseJsonMessage<T>(
   jsonString: string,
   schema: z.Schema<T>
-):
-  | { success: true; data: T }
-  | { success: false; error: z.ZodFormattedError<T> | { message: string } } {
+) {
   let parsedData: unknown
 
   try {
     parsedData = JSON.parse(jsonString)
   } catch {
-    return { success: false, error: { message: 'Invalid JSON' } }
+    return { success: false as const, error: { message: 'Invalid JSON' } }
   }
 
   const result = schema.safeParse(parsedData)
 
   if (!result.success) {
-    return { success: false, error: result.error.format() }
+    return { success: false as const, error: result.error.format() }
   }
 
-  return { success: true, data: result.data }
+  return { success: true as const, data: result.data }
 }
