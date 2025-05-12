@@ -2,7 +2,7 @@ import type Redis from 'ioredis'
 
 import type { Location } from '@/schemas/location'
 
-import type { Edge, Node } from './types'
+import type { Edge, Node } from './draw/schemas'
 
 /* 
 This class store Graphs on a Redis instance.

@@ -11,9 +11,9 @@ import type {
 import { draw3dGraph } from '../graph/draw'
 import { createParticleFromLocation } from '../graph/draw/confined-particle/create-particle-from-location'
 import { quantizeAndRankParticles } from '../graph/draw/quatizes'
+import type { NodeParticles } from '../graph/draw/schemas'
 import { SimulationScheduler } from '../graph/draw/simulation-scheduler'
 import { GraphStore } from '../graph/store'
-import type { NodeParticles } from '../graph/types'
 
 interface EventData {
   id: string
@@ -66,6 +66,12 @@ export class EventService {
       deviceId,
       location
     }))
+  }
+
+  public async getGraphEdges() {
+    const edges = await this.eventGraph.listEdges()
+
+    return edges
   }
 
   public notifyAdmin(message: Message) {

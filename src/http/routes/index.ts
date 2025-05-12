@@ -5,6 +5,7 @@ import { getProfile } from './auth/get-profile'
 import { createEvent } from './event/create-event'
 import { getEventById } from './event/get-event'
 import { getEventAround } from './event/get-event-by-location'
+import { getGraphEdges } from './event/get-graph-edges'
 import { getParticipants } from './event/get-participants'
 import { adminEvent } from './websocket/admin-event'
 import { joinEvent } from './websocket/join-event'
@@ -19,6 +20,7 @@ export async function routes(app: FastifyInstance) {
   app.register(getEventById)
   app.register(getEventAround)
   app.register(getParticipants)
+  app.register(getGraphEdges)
 
   // Websockets
   app.register(joinEvent)

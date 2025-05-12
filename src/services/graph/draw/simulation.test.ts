@@ -14,9 +14,9 @@ import {
   type Vector3
 } from '@/utils/vectors'
 
-import type { Edge, Node, NodeParticles } from '../types'
 import { draw3dGraph } from '.'
 import { ConfinedParticle } from './confined-particle'
+import type { Edge, Node, NodeParticles } from './schemas'
 
 // Seed the PRNG for deterministic tests
 beforeAll(() => {

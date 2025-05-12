@@ -1,4 +1,4 @@
-import type { Location } from '@/schemas/location'
+import type { ExactLocation, Location } from '@/schemas/location'
 
 export const EARTHS_RADIUS = 6371000
 
@@ -23,7 +23,7 @@ export const toRadians = (deg: number): number => (deg * Math.PI) / 180
  */
 export function displacementOnEarth(
   pointLocation: Location,
-  baseLocation: Location
+  baseLocation: ExactLocation
 ): { deltaEast: number; deltaNorth: number } {
   const latStartRad = toRadians(baseLocation.latitude)
   const latEndRad = toRadians(pointLocation.latitude)

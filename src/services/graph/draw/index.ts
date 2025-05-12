@@ -1,7 +1,7 @@
 import { lengthSquared, normalize, scale, subtract } from '@/utils/vectors'
 
-import type { Graph, NodeParticles } from '../types'
 import { ConfinedParticle } from './confined-particle'
+import type { Graph, NodeParticles } from './schemas'
 
 const ALMOST_ZERO = 1e-3 // Used to avoid division by 0
 

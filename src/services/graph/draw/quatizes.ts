@@ -1,7 +1,7 @@
 import type { Vector3 } from '@/utils/vectors'
 
-import type { Node } from '../types'
 import type { ConfinedParticle } from './confined-particle'
+import type { Node } from './schemas'
 
 export function quantize(value: number, precision: number = 0.25) {
   return Math.floor(value / precision)
