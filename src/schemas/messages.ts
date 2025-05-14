@@ -37,6 +37,13 @@ export const messageSchemas = {
     distance: z.number().nullable()
   }),
 
+  DISTANCE_REPORT: z.object({
+    type: z.literal('DISTANCE_REPORT'),
+    from: z.string(),
+    to: z.string(),
+    distance: z.number().nullable()
+  }),
+
   USER_LEFT: z.object({
     type: z.literal('USER_LEFT'),
     deviceId: z.string()
@@ -44,6 +51,17 @@ export const messageSchemas = {
 
   SET_POINT: z.object({
     type: z.literal('SET_POINT'),
+    absolute: z.object({ x: z.number(), y: z.number(), z: z.number() }),
+    relative: z.object({
+      x: z.number().nonnegative(),
+      y: z.number().nonnegative(),
+      z: z.number().nonnegative()
+    })
+  }),
+
+  SET_POINT_REPORT: z.object({
+    type: z.literal('SET_POINT_REPORT'),
+    deviceId: z.string(),
     absolute: z.object({ x: z.number(), y: z.number(), z: z.number() }),
     relative: z.object({
       x: z.number().nonnegative(),
@@ -61,7 +79,9 @@ export const messageSchema = z.discriminatedUnion('type', [
   messageSchemas.USER_JOINED,
   messageSchemas.USER_LEFT,
   messageSchemas.DISTANCE,
-  messageSchemas.SET_POINT
+  messageSchemas.DISTANCE_REPORT,
+  messageSchemas.SET_POINT,
+  messageSchemas.SET_POINT_REPORT
 ])
 
 export type Message = z.infer<typeof messageSchema>

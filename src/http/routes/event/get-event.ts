@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { NotFoundError } from '@/http/_errors/not-found'
 import { prisma } from '@/lib/prisma'
+import { eventSchema } from '@/schemas/event'
 
 export async function getEventById(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
@@ -16,19 +17,7 @@ export async function getEventById(app: FastifyInstance) {
           eventId: z.string().uuid()
         }),
         response: {
-          200: z.object({
-            event: z.object({
-              id: z.string().uuid(),
-              type: z.enum(['TORCH', 'SCREEN']),
-              name: z.string(),
-              status: z.enum(['OPEN', 'CLOSED', 'FINISHED']),
-              latitude: z.number().min(-90).max(90),
-              longitude: z.number().min(-180).max(180),
-              userId: z.string(),
-              createdAt: z.date(),
-              updatedAt: z.date()
-            })
-          })
+          200: z.object({ event: eventSchema })
         }
       }
     },

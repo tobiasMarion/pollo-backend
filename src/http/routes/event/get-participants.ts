@@ -42,7 +42,7 @@ export async function getParticipants(app: FastifyInstance) {
         throw new NotFoundError('Event not found')
       }
 
-      const participants = event.getSubscribers()
+      const participants = await event.getSubscribers()
 
       return reply.send({ participants })
     }

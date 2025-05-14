@@ -14,8 +14,8 @@ export function createParticleFromLocation(
 
   const position = {
     x: deltaEast,
-    y: deltaNorth,
-    z: pointLocation.altitude
+    y: pointLocation.altitude,
+    z: deltaNorth
   }
 
   return new ConfinedParticle({

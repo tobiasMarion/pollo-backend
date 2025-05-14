@@ -29,8 +29,8 @@ describe('createParticleFromLocation', () => {
     expect(particle).toBeInstanceOf(ConfinedParticle)
     expect(particle.getPosition()).toEqual({
       x: 11,
-      y: 12,
-      z: 100
+      y: 100,
+      z: 12
     })
   })
 })

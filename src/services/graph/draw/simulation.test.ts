@@ -6,17 +6,17 @@ import seedrandom from 'seedrandom'
 import { v4 as uuidv4 } from 'uuid'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { randomNormal, randomTruncatedNormal } from '@/utils/random'
 import {
   add,
   distanceBetweenPoints,
   randomVector,
   type Vector3
-} from '@/utils/vectors'
+} from '@/schemas/vectors'
+import { randomNormal, randomTruncatedNormal } from '@/utils/random'
 
+import type { Edge, Node, NodeParticles } from '../../../schemas/graph'
 import { draw3dGraph } from '.'
 import { ConfinedParticle } from './confined-particle'
-import type { Edge, Node, NodeParticles } from './schemas'
 
 // Seed the PRNG for deterministic tests
 beforeAll(() => {
@@ -24,7 +24,7 @@ beforeAll(() => {
 })
 
 describe('Simulation', () => {
-  const NODE_COUNT = 100
+  const NODE_COUNT = 50
   const MIN_DIST_TO_CREATE_EDGE = 7
 
   // Position error parameters

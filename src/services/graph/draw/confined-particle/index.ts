@@ -1,5 +1,5 @@
 import { minMax } from '@/utils/min-max'
-import { add, lengthSquared, type Vector3, vectorNull } from '@/utils/vectors'
+import { add, lengthSquared, type Vector3, vectorNull } from '@/schemas/vectors'
 
 export interface ConfinedParticleProps {
   position: Vector3

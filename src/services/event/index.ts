@@ -11,7 +11,6 @@ import type {
 import { draw3dGraph } from '../graph/draw'
 import { createParticleFromLocation } from '../graph/draw/confined-particle/create-particle-from-location'
 import { quantizeAndRankParticles } from '../graph/draw/quatizes'
-import type { NodeParticles } from '../graph/draw/schemas'
 import { SimulationScheduler } from '../graph/draw/simulation-scheduler'
 import { GraphStore } from '../graph/store'
 
@@ -30,7 +29,7 @@ export class EventService {
   private id: string
   private location: ExactLocation
   private admin: Admin
-  private subscribers = new Map<string, Subscriber>()
+  private subscribers = new Map<string, SendMessage>()
 
   private eventGraph: GraphStore
   private simulationScheduler: SimulationScheduler
@@ -61,10 +60,12 @@ export class EventService {
     this.admin.sendMessage = send
   }
 
-  public getSubscribers() {
-    return Array.from(this.subscribers, ([deviceId, { location }]) => ({
+  public async getSubscribers() {
+    const metadata = await this.eventGraph.listNodesMetadata()
+
+    return Object.entries(metadata).map(([deviceId, data]) => ({
       deviceId,
-      location
+      location: data.location
     }))
   }
 
@@ -83,8 +84,8 @@ export class EventService {
   public publish(message: Message) {
     this.notifyAdmin(message)
 
-    this.subscribers.forEach(sub => {
-      sub.sendMessage(message)
+    this.subscribers.forEach(sendMessage => {
+      sendMessage(message)
     })
   }
 
@@ -92,16 +93,14 @@ export class EventService {
     this.simulationScheduler.notifyUpdate()
   }
 
-  public subscribe(subscriber: Subscriber) {
-    const { deviceId, location } = subscriber
-
+  public subscribe({ deviceId, location, sendMessage }: Subscriber) {
     this.publish({
       type: 'USER_JOINED',
       deviceId,
       location
     })
 
-    this.subscribers.set(deviceId, subscriber)
+    this.subscribers.set(deviceId, sendMessage)
     this.eventGraph.addNode(deviceId)
     this.eventGraph.setNodeLocation(deviceId, location)
     this.onGraphChanged()
@@ -114,6 +113,13 @@ export class EventService {
       this.eventGraph.setEdge({ from, to, value })
     }
 
+    this.notifyAdmin({
+      type: 'DISTANCE_REPORT',
+      from,
+      to,
+      distance: value
+    })
+
     this.onGraphChanged()
   }
 
@@ -124,7 +130,6 @@ export class EventService {
       return
     }
 
-    this.subscribers.set(deviceId, { ...sub, location })
     this.notifyAdmin({ type: 'LOCATION_UPDATE_REPORT', deviceId, location })
     this.eventGraph.setNodeLocation(deviceId, location)
     this.onGraphChanged()
@@ -142,37 +147,54 @@ export class EventService {
 
     this.publish({
       type: 'USER_LEFT',
-      deviceId: sub.deviceId
+      deviceId
     })
 
     this.onGraphChanged()
   }
 
-  private async runSimulation() {
-    const edges = await this.eventGraph.listEdges()
-    const nodes = []
-    const particles: NodeParticles = {}
+  public async getEventGraph() {
+    return await this.eventGraph.getEventGraph()
+  }
 
-    for (const [node, sub] of this.subscribers) {
-      nodes.push(node)
-      particles[node] = createParticleFromLocation(sub.location, this.location)
-    }
+  private async runSimulation() {
+    const [nodesWithMetadata, edges] = await Promise.all([
+      this.eventGraph.listNodesMetadata(),
+      this.eventGraph.listEdges()
+    ])
+
+    const nodes = Object.keys(nodesWithMetadata)
+    const particles = Object.fromEntries(
+      nodes.map(node => [
+        node,
+        createParticleFromLocation(
+          nodesWithMetadata[node].location,
+          this.location
+        )
+      ])
+    )
 
     const simulationResult = draw3dGraph({ nodes, edges }, particles)
     const positions = quantizeAndRankParticles(simulationResult)
 
-    for (const [particle, position] of Object.entries(positions)) {
-      const sub = this.subscribers.get(particle)
+    nodes.forEach(particle => {
+      const notifySub = this.subscribers.get(particle)
+      const position = positions[particle]
 
-      if (!sub) continue
+      if (notifySub && position) {
+        this.eventGraph.setNodePosition(particle, position)
 
-      const { absolute, relative } = position
+        notifySub({
+          type: 'SET_POINT',
+          ...position
+        })
 
-      sub.sendMessage({
-        type: 'SET_POINT',
-        absolute,
-        relative
-      })
-    }
+        this.notifyAdmin({
+          type: 'SET_POINT_REPORT',
+          deviceId: particle,
+          ...position
+        })
+      }
+    })
   }
 }
