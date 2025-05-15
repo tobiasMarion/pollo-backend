@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { effectSchema } from './effects'
 import { type Location, locationSchema } from './location'
 
 export const messageSchemas = {
@@ -68,6 +69,11 @@ export const messageSchemas = {
       y: z.number().nonnegative(),
       z: z.number().nonnegative()
     })
+  }),
+
+  EFFECT: z.object({
+    type: z.literal('EFFECT'),
+    effect: effectSchema
   })
 } as const
 
@@ -81,7 +87,8 @@ export const messageSchema = z.discriminatedUnion('type', [
   messageSchemas.DISTANCE,
   messageSchemas.DISTANCE_REPORT,
   messageSchemas.SET_POINT,
-  messageSchemas.SET_POINT_REPORT
+  messageSchemas.SET_POINT_REPORT,
+  messageSchemas.EFFECT
 ])
 
 export type Message = z.infer<typeof messageSchema>

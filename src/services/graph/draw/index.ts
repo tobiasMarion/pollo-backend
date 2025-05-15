@@ -1,15 +1,16 @@
 import { lengthSquared, normalize, scale, subtract } from '@/schemas/vectors'
 
-import { ConfinedParticle } from './confined-particle'
 import type { Graph, NodeParticles } from '../../../schemas/graph'
+import { ConfinedParticle } from './confined-particle'
 
 const ALMOST_ZERO = 1e-3 // Used to avoid division by 0
 
-function applyEdgeElasticForce(
+export function applyEdgeElasticForce(
   p1: ConfinedParticle,
   p2: ConfinedParticle,
   restLength: number,
-  springConstant: number = 0.0005
+  springConstant: number = 0.0001,
+  dampingCoeficient: number = 0.1
 ) {
   const directionVector = subtract(p2.getPosition(), p1.getPosition())
   const distanceSquared = lengthSquared(directionVector) + ALMOST_ZERO
@@ -23,7 +24,10 @@ function applyEdgeElasticForce(
   const displacement = distance - restLength
   const forceMagnitude = springConstant * displacement
 
-  const elasticForce = scale(directionUnit, forceMagnitude)
+  const elasticForce = scale(
+    directionUnit,
+    forceMagnitude * (1 - dampingCoeficient)
+  )
 
   p1.applyForce(elasticForce)
   p2.applyForce(scale(elasticForce, -1))

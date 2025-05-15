@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { events } from '@/lib/events'
 import { prisma } from '@/lib/prisma'
 import { type Message, messageSchema } from '@/schemas/messages'
+import type { EventService } from '@/services/event'
 
 export async function adminEvent(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
@@ -24,11 +25,14 @@ export async function adminEvent(app: FastifyInstance) {
     },
     (socket, { params }) => {
       let isAuthenticated = false
+      let event: EventService | null = null
 
       socket.on('message', async messageBuffer => {
-        const { success, data, error } = messageSchema.safeParse(
-          JSON.parse(messageBuffer.toString())
-        )
+        const {
+          success,
+          data: message,
+          error
+        } = messageSchema.safeParse(JSON.parse(messageBuffer.toString()))
 
         if (!success) {
           socket.send(error.toString())
@@ -36,19 +40,21 @@ export async function adminEvent(app: FastifyInstance) {
           return
         }
 
-        if (!isAuthenticated && data.type !== 'AUTHENTICATION') {
+        if (!isAuthenticated && message.type !== 'AUTHENTICATION') {
           socket.send('UNAUTHORIZED')
           socket.close()
+
+          return
         }
 
-        if (data.type === 'AUTHENTICATION') {
-          const { sub } = app.jwt.verify<{ sub: string }>(data.token)
+        if (message.type === 'AUTHENTICATION') {
+          const { sub } = app.jwt.verify<{ sub: string }>(message.token)
 
-          const event = await prisma.event.findUnique({
+          const eventOnDB = await prisma.event.findUnique({
             where: { id: params.eventId, userId: sub, status: 'OPEN' }
           })
 
-          if (!event) {
+          if (!eventOnDB) {
             socket.send('UNAUTHORIZED')
             socket.close()
 
@@ -56,10 +62,17 @@ export async function adminEvent(app: FastifyInstance) {
           }
 
           isAuthenticated = true
+          event = events.get(eventOnDB.id)!
 
-          events.get(params.eventId)?.setAdminConnection((message: Message) => {
+          event.setAdminConnection((message: Message) => {
             socket.send.bind(socket)(JSON.stringify(message))
           })
+        }
+
+        if (message.type === 'EFFECT') {
+          if (event) {
+            event.publish(message)
+          }
         }
       })
     }
