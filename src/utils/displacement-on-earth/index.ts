@@ -1,4 +1,5 @@
 import type { ExactLocation, Location } from '@/schemas/location'
+import type { Vector3 } from '@/schemas/vectors'
 
 export const EARTHS_RADIUS = 6371000
 
@@ -21,7 +22,7 @@ export const toRadians = (deg: number): number => (deg * Math.PI) / 180
  *  - deltaEast: Eastward displacement in meters.
  *  - deltaNorth: Northward displacement in meters.
  */
-export function displacementOnEarth(
+export function getDisplacementOnEarth(
   pointLocation: Location,
   baseLocation: ExactLocation
 ): { deltaEast: number; deltaNorth: number } {
@@ -38,4 +39,12 @@ export function displacementOnEarth(
   const deltaNorth = EARTHS_RADIUS * deltaLatRad
 
   return { deltaEast, deltaNorth }
+}
+
+export function computeDisplacement(
+  loc: Location,
+  base: ExactLocation
+): Vector3 {
+  const { deltaEast, deltaNorth } = getDisplacementOnEarth(loc, base)
+  return { x: deltaEast, y: loc.altitude, z: deltaNorth }
 }

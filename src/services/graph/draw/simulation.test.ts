@@ -91,7 +91,7 @@ describe('Simulation', () => {
       particlesWithErrors[node] = new ConfinedParticle({
         position: add(originalPoints[node], delta),
         radius: magnitudeError,
-        deltaZ: magnitudeError
+        deltaY: magnitudeError
       })
     })
 

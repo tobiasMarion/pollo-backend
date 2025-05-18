@@ -17,13 +17,22 @@ function askQuestion(question: string): Promise<string> {
   return new Promise(resolve => rl.question(question, ans => resolve(ans)))
 }
 
-function meterOffset(lat: number, meters: number): { dLat: number; dLon: number } {
+function meterOffset(
+  lat: number,
+  meters: number
+): { dLat: number; dLon: number } {
   const dLat = (meters / EARTHS_RADIUS) * (180 / Math.PI)
-  const dLon = (meters / (EARTHS_RADIUS * Math.cos((lat * Math.PI) / 180))) * (180 / Math.PI)
+  const dLon =
+    (meters / (EARTHS_RADIUS * Math.cos((lat * Math.PI) / 180))) *
+    (180 / Math.PI)
   return { dLat, dLon }
 }
 
-function generateLocations(base: Event, count: number, maxRadius: number = 15): Location[] {
+function generateLocations(
+  base: Event,
+  count: number,
+  maxRadius: number = 15
+): Location[] {
   const arr: Location[] = []
   for (let i = 0; i < count; i++) {
     const r = Math.random() * maxRadius
@@ -42,7 +51,12 @@ function generateLocations(base: Event, count: number, maxRadius: number = 15): 
   return arr
 }
 
-function applyGaussianError(location: Location, latStdDev: number, lonStdDev: number, altStdDev: number): Location {
+function applyGaussianError(
+  location: Location,
+  latStdDev: number,
+  lonStdDev: number,
+  altStdDev: number
+): Location {
   const latError = randomNormal(0, latStdDev)
   const lonError = randomNormal(0, lonStdDev)
   const altError = randomNormal(0, altStdDev)
@@ -77,7 +91,9 @@ async function main() {
     console.log('Generating points...')
     const realLocations = generateLocations(event, connectionCount)
 
-    console.log(`Opening ${connectionCount} WebSocket connections (100ms interval) and sending JOIN message...`)
+    console.log(
+      `Opening ${connectionCount} WebSocket connections (100ms interval) and sending JOIN message...`
+    )
     const sockets: WebSocket[] = []
     const deviceIds: string[] = []
 
@@ -86,7 +102,9 @@ async function main() {
         await delay(100)
       }
 
-      const ws = new WebSocket(`ws://localhost:${env.PORT}/events/${eventId}/join`)
+      const ws = new WebSocket(
+        `ws://localhost:${env.PORT}/events/${eventId}/join`
+      )
       sockets.push(ws)
 
       ws.on('open', () => {
@@ -127,20 +145,31 @@ function scheduleDistanceReports(
       j = Math.floor(Math.random() * locations.length)
     }
 
-    const locA = locations[i]
-    const locB = locations[j]
-    const toRad = (v: number) => (v * Math.PI) / 180
-    const deltaLat = toRad(locB.latitude - locA.latitude)
-    const deltaLong = toRad(locB.longitude - locA.longitude)
-    const a =
-      Math.sin(deltaLat / 2) ** 2 +
-      Math.cos(toRad(locA.latitude)) * Math.cos(toRad(locB.latitude)) * Math.sin(deltaLong / 2) ** 2
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    const dist = EARTHS_RADIUS * c
+    const locationA = locations[i]
+    const locationB = locations[j]
 
-    if (dist <= maxDistance) {
+    const degreesToRadians = (degrees: number) => (degrees * Math.PI) / 180
+
+    const lat1 = degreesToRadians(locationA.latitude)
+    const lat2 = degreesToRadians(locationB.latitude)
+    const deltaLat = lat2 - lat1
+
+    const lon1 = degreesToRadians(locationA.longitude)
+    const lon2 = degreesToRadians(locationB.longitude)
+    const deltaLon = lon2 - lon1
+
+    const haversineA =
+      Math.sin(deltaLat / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2
+
+    const centralAngle =
+      2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA))
+
+    const distance = EARTHS_RADIUS * centralAngle
+
+    if (distance <= maxDistance && deviceIds[j]) {
       const error = Math.random() * 1 - 0.5 // ±0.5m
-      const measured = dist + error
+      const measured = distance + error
 
       const msg: MessageTypes['DISTANCE'] = {
         type: 'DISTANCE',

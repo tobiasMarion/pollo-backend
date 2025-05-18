@@ -1,5 +1,5 @@
 import type { ExactLocation, Location } from '@/schemas/location'
-import { displacementOnEarth } from '@/utils/displacement-on-earth'
+import { getDisplacementOnEarth } from '@/utils/displacement-on-earth'
 
 import { ConfinedParticle } from '.'
 
@@ -7,7 +7,7 @@ export function createParticleFromLocation(
   pointLocation: Location,
   baseLocation: ExactLocation
 ) {
-  const { deltaEast, deltaNorth } = displacementOnEarth(
+  const { deltaEast, deltaNorth } = getDisplacementOnEarth(
     pointLocation,
     baseLocation
   )
@@ -21,6 +21,6 @@ export function createParticleFromLocation(
   return new ConfinedParticle({
     position,
     radius: pointLocation.horizontalAccuracy,
-    deltaZ: pointLocation.verticalAccuracy
+    deltaY: pointLocation.verticalAccuracy
   })
 }

@@ -23,8 +23,14 @@ describe('GraphStore', () => {
   }
 
   const mockPosition: NodePosition = {
-    absolute: vectorNull(),
-    relative: vectorNull()
+    uncorrected: {
+      relative: vectorNull(),
+      absolute: vectorNull()
+    },
+    simulated: {
+      relative: vectorNull(),
+      absolute: vectorNull()
+    }
   }
 
   beforeEach(() => {
@@ -125,6 +131,7 @@ describe('GraphStore', () => {
     const edge: Edge = { from: node, to: 'node2', value: 1.23 }
     await store.setEdge(edge)
     const graph = await store.getEventGraph()
+
     expect(graph.nodes[node]).toEqual({
       location: mockLocation,
       position: mockPosition

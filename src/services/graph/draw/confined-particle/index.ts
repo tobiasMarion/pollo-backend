@@ -1,10 +1,16 @@
-import { add, lengthSquared, type Vector3, vectorNull } from '@/schemas/vectors'
+import {
+  add,
+  distanceBetweenPoints,
+  lengthSquared,
+  type Vector3,
+  vectorNull
+} from '@/schemas/vectors'
 import { minMax } from '@/utils/min-max'
 
 export interface ConfinedParticleProps {
   position: Vector3
   radius: number
-  deltaZ: number
+  deltaY: number
 }
 
 // Represents a point that can move freely inside a cylinder, but not get out of it
@@ -12,45 +18,47 @@ export class ConfinedParticle {
   private position: Vector3
 
   // Center coordinates of the cylinder base
-  private centerX: number
-  private centerY: number
-  private radius: number
+  private center: Vector3
 
-  private maxZ: number
-  private minZ: number
+  // Limits
+  private radius: number
+  private maxY: number
+  private minY: number
 
   private forces: Vector3 = vectorNull()
 
-  constructor({ position, radius, deltaZ }: ConfinedParticleProps) {
+  constructor({ position, radius, deltaY }: ConfinedParticleProps) {
     this.position = position
-    this.centerX = position.x
-    this.centerY = position.y
+    this.center = position
     this.radius = radius
-    this.maxZ = position.z + deltaZ
-    this.minZ = position.z - deltaZ
+    this.maxY = position.y + deltaY
+    this.minY = position.y - deltaY
   }
 
   public getPosition(): Vector3 {
     return this.position
   }
 
-  public moveTo({ x, y, z }: Vector3) {
-    const clampedZ = minMax(z, this.minZ, this.maxZ)
+  public getCenter() {
+    return this.center
+  }
 
-    // Calculate distance from center of the cylinder
-    const dx = x - this.centerX
-    const dy = y - this.centerY
-    const distanceFromCenter = Math.sqrt(dx * dx + dy * dy)
+  public moveTo({ x, y, z }: Vector3) {
+    const clampedY = minMax(y, this.minY, this.maxY)
+
+    const baseY = this.center.y
+    const contourLine = { x, y: baseY, z }
+
+    const distanceFromCenter = distanceBetweenPoints(this.center, contourLine)
 
     let clampedX = x
-    let clampedY = y
+    let clampedZ = z
 
     // If outside the cylinder radius, scale the position to the boundary
     if (distanceFromCenter > this.radius) {
       const scale = this.radius / distanceFromCenter
-      // Apply scaling relative to center
-      clampedX = this.centerX + dx * scale
-      clampedY = this.centerY + dy * scale
+      clampedX = this.center.x + (x - this.center.x) * scale
+      clampedZ = this.center.z + (z - this.center.z) * scale
     }
 
     this.position = {

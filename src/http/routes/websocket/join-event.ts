@@ -36,19 +36,17 @@ export async function joinEvent(app: FastifyInstance) {
       }
 
       socket.on('message', rawMessage => {
-        const result = safeParseJsonMessage(
+        const { success, data, error } = safeParseJsonMessage(
           rawMessage.toString(),
           messageSchema
         )
 
-        if (!result.success) {
-          console.log(rawMessage.toString())
-          socket.send(JSON.stringify(result.error))
+        if (!success) {
+          console.log(error)
+          socket.send(JSON.stringify(error))
           socket.close()
           return
         }
-
-        const { data } = result
 
         if (!deviceId && data.type !== 'JOIN') {
           socket.send(

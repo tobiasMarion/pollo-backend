@@ -4,7 +4,7 @@ import { ConfinedParticle } from '.'
 import { createParticleFromLocation } from './create-particle-from-location'
 
 vi.mock('@/utils/displacement-on-earth', () => ({
-  displacementOnEarth: () => ({
+  getDisplacementOnEarth: () => ({
     deltaEast: 11,
     deltaNorth: 12
   })

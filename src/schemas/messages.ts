@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { effectSchema } from './effects'
+import { positionSchema } from './graph'
 import { type Location, locationSchema } from './location'
 
 export const messageSchemas = {
@@ -52,23 +53,13 @@ export const messageSchemas = {
 
   SET_POINT: z.object({
     type: z.literal('SET_POINT'),
-    absolute: z.object({ x: z.number(), y: z.number(), z: z.number() }),
-    relative: z.object({
-      x: z.number().nonnegative(),
-      y: z.number().nonnegative(),
-      z: z.number().nonnegative()
-    })
+    position: positionSchema
   }),
 
   SET_POINT_REPORT: z.object({
     type: z.literal('SET_POINT_REPORT'),
     deviceId: z.string(),
-    absolute: z.object({ x: z.number(), y: z.number(), z: z.number() }),
-    relative: z.object({
-      x: z.number().nonnegative(),
-      y: z.number().nonnegative(),
-      z: z.number().nonnegative()
-    })
+    position: positionSchema
   }),
 
   EFFECT: z.object({
@@ -111,23 +102,33 @@ export type Admin = {
   sendMessage: SendMessage | undefined
 }
 
+interface SafeParseError<T> {
+  success: false
+  error: z.ZodFormattedError<T> | { message: string }
+  data: null
+}
+
+type SafeParseReturn<T> =
+  | { success: true; error: null; data: T }
+  | SafeParseError<T>
+
 export function safeParseJsonMessage<T>(
   jsonString: string,
   schema: z.Schema<T>
-) {
+): SafeParseReturn<T> {
   let parsedData: unknown
 
   try {
     parsedData = JSON.parse(jsonString)
   } catch {
-    return { success: false as const, error: { message: 'Invalid JSON' } }
+    return { success: false, error: { message: 'Invalid JSON' }, data: null }
   }
 
   const result = schema.safeParse(parsedData)
 
   if (!result.success) {
-    return { success: false as const, error: result.error.format() }
+    return { success: false, error: result.error.format(), data: null }
   }
 
-  return { success: true as const, data: result.data }
+  return { success: true, data: result.data, error: null }
 }

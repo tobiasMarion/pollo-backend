@@ -5,7 +5,8 @@ import {
   type Metadata,
   metadataSchema,
   type Node,
-  type NodePosition
+  type NodePosition,
+  type NodesWithMetadata
 } from '@/schemas/graph'
 import type { Location } from '@/schemas/location'
 
@@ -44,6 +45,7 @@ export class GraphStore {
       location,
       position: existing?.position
     }
+
     const key = this.keyForNodeMetadata()
     await this.redis.hset(key, node, JSON.stringify(updated))
     this.redis.expire(key, TTL_SECONDS)
@@ -51,7 +53,7 @@ export class GraphStore {
 
   async setNodePosition(node: Node, position: NodePosition) {
     const existing = await this.getNodeMetadata(node)
-    if (!existing) return // To not create a node without location
+    if (!existing) return
     const updated: Metadata = {
       location: existing.location,
       position
@@ -66,7 +68,7 @@ export class GraphStore {
     return json ? JSON.parse(json) : null
   }
 
-  async listNodesMetadata(): Promise<Record<Node, Metadata>> {
+  async listNodesMetadata(): Promise<NodesWithMetadata> {
     const nodes = await this.listNodes()
     const pipeline = this.redis.pipeline()
 
@@ -80,22 +82,22 @@ export class GraphStore {
       throw new Error('Failed to execute Redis pipeline')
     }
 
-    const metadataMap: Record<Node, Metadata> = {}
+    const metadataMap: NodesWithMetadata = {}
 
     for (let i = 0; i < results.length; i++) {
-      const [error, json] = results[i]
-      if (error || typeof json !== 'string') continue
+      const [err, json] = results[i]
+      if (err || typeof json !== 'string') continue
 
       const node = nodes[i]
-      try {
-        const parsed = metadataSchema.parse(JSON.parse(json))
-        metadataMap[node] = parsed
-      } catch (parseError) {
-        console.error(
-          `Erro ao analisar metadados para o nó ${node}:`,
-          parseError
-        )
+      const metadata = JSON.parse(json)
+
+      const { data, error, success } = metadataSchema.safeParse(metadata)
+      if (!success) {
+        console.log(error)
+        continue
       }
+
+      metadataMap[node] = data
     }
 
     return metadataMap

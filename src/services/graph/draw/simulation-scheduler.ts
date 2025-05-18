@@ -71,6 +71,7 @@ export class SimulationScheduler {
       await this.run()
     } catch (error) {
       console.error('Error in simulation run:', error)
+      throw error
     } finally {
       this.isRunning = false
     }
