@@ -15,12 +15,18 @@ const effectSchemas = {
     direction: directionsSchema,
     activeTime: z.number().nonnegative(),
     spreadDelayPerUnit: z.number().nonnegative()
+  }),
+  ROTATE: z.object({
+    name: z.literal('ROTATE'),
+    activeTime: z.number().nonnegative(),
+    spreadDelayPerRadian: z.number().nonnegative()
   })
 } as const
 
 export const effectSchema = z.discriminatedUnion('name', [
   effectSchemas.PULSE,
-  effectSchemas.WAVE
+  effectSchemas.WAVE,
+  effectSchemas.ROTATE
 ])
 
 export type Effect = z.infer<typeof effectSchema>
