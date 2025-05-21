@@ -1,9 +1,10 @@
 import type { ExactLocation } from '@/schemas/location'
-import type { Vector3 } from '@/schemas/vectors'
+import { isVectorEqualTo, type Vector3 } from '@/schemas/vectors'
 import { computeDisplacement } from '@/utils/displacement-on-earth'
 
 import type {
   NodeParticles,
+  NodePosition,
   NodesWithMetadata,
   SimulationResult,
   UncorrectedPositons
@@ -88,4 +89,13 @@ export function quantizeAndRankParticles(
   }
 
   return result
+}
+
+export function isPositionEqualTo(p1: NodePosition, p2: NodePosition) {
+  return (
+    isVectorEqualTo(p1.simulated.absolute, p2.simulated.absolute) &&
+    isVectorEqualTo(p1.simulated.relative, p2.simulated.relative) &&
+    isVectorEqualTo(p1.uncorrected.absolute, p2.uncorrected.absolute) &&
+    isVectorEqualTo(p1.uncorrected.relative, p2.uncorrected.relative)
+  )
 }

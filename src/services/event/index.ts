@@ -18,6 +18,7 @@ import type {
 import { draw3dGraph } from '../graph/draw'
 import { createParticleFromLocation } from '../graph/draw/confined-particle/create-particle-from-location'
 import {
+  isPositionEqualTo,
   quantizeAndRankLocations,
   quantizeAndRankParticles
 } from '../graph/draw/quatizes'
@@ -169,11 +170,13 @@ export class EventService {
 
   private updateSubscribersWithPositions(
     uncorrectedPositions: UncorrectedPositons,
-    simulatedPositions: SimulationResult
+    simulatedPositions: SimulationResult,
+    nodesWithMetadata: NodesWithMetadata
   ) {
     for (const node in simulatedPositions) {
       const uncorrected = uncorrectedPositions[node]
       const simulated = simulatedPositions[node]
+      const pastPosition = nodesWithMetadata[node].position
 
       const notifySub = this.subscribers.get(node)
       if (!notifySub) continue
@@ -182,6 +185,8 @@ export class EventService {
         uncorrected,
         simulated
       }
+
+      if (pastPosition && isPositionEqualTo(position, pastPosition)) continue
 
       this.eventGraph.setNodePosition(node, position)
 
@@ -223,6 +228,10 @@ export class EventService {
       this.location
     )
 
-    this.updateSubscribersWithPositions(uncorredtedCoords, simulated)
+    this.updateSubscribersWithPositions(
+      uncorredtedCoords,
+      simulated,
+      nodesWithMetadata
+    )
   }
 }

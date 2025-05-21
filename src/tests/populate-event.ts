@@ -136,7 +136,7 @@ function scheduleDistanceReports(
   ws: WebSocket,
   locations: Location[],
   deviceIds: string[],
-  intervalMs: number = 5000,
+  intervalMs: number = 10000,
   maxDistance: number = 6
 ) {
   setInterval(() => {
@@ -174,7 +174,7 @@ function scheduleDistanceReports(
       const msg: MessageTypes['DISTANCE'] = {
         type: 'DISTANCE',
         to: deviceIds[j],
-        distance: measured % 1 > 0.5 ? measured : null
+        distance: measured % 1 > 0.7 ? measured : null
       }
       ws.send(JSON.stringify(msg))
     }
